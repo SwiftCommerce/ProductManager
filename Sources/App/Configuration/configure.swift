@@ -1,5 +1,5 @@
 @_exported import FluentMySQL
-import Vapor
+@_exported import Vapor
 
 /// Called before your application initializes.
 ///

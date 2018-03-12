@@ -23,13 +23,15 @@ public func configure(
     middlewares.use(ErrorMiddleware.self) // Catches errors and converts to HTTP response
     services.register(middlewares)
 
-    // Configure a SQLite database
+    // Configure a MySQL database
     var databases = DatabaseConfig()
+    let databaseName = "product_manager"
+    databases.add(database: MySQLDatabase(hostname: "localhost", user: "root", password: nil, database: databaseName), as: .mysql)
 
     // Configure migrations
     var migrations = MigrationConfig()
     migrations.add(model: Category.self, database: .mysql)
     
-//    services.register(databases)
+    services.register(databases)
     services.register(migrations)
 }

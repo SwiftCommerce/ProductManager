@@ -35,6 +35,8 @@ public func configure(
     migrations.add(model: Price.self, database: .mysql)
     migrations.add(model: Attribute.self, database: .mysql)
     migrations.add(model: ProductCategory.self, database: .mysql)
+    migrations.add(model: ProductTranslation.self, database: .mysql)
+    migrations.add(model: CategoryTranslation.self, database: .mysql)
     
     services.register(databases)
     services.register(migrations)

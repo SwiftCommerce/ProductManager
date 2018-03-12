@@ -1,6 +1,6 @@
 import FluentMySQL
 
-final class ProductCategory: MySQLPivot {
+final class ProductCategory: MySQLPivot, Migration {
     typealias Left = Product
     typealias Right = Category
     

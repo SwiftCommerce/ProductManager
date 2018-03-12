@@ -1,4 +1,4 @@
-import FluentSQLite
+@_exported import FluentMySQL
 import Vapor
 
 /// Called before your application initializes.

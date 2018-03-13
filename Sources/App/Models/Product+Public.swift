@@ -3,7 +3,7 @@ struct ProductResponseBody: Content {
     let sku: String
     let attributes: [Attribute]
     let price: Price
-    let translation: ProductTranslation
+    let translations: [ProductTranslation]
     let categories: [Category]
 }
 
@@ -11,11 +11,11 @@ extension Future where T == ProductResponseBody {
     init(product: Product, executedWith executor: DatabaseConnectable) {
         let attributes = product.attributes(with: executor)
         let price = product.price(with: executor)
-        let translation = product.translation(with: executor)
+        let translations = product.translations(with: executor)
         let categories = product.categories(with: executor)
         
-        self = App.map(to: ProductResponseBody.self, attributes, price, translation, categories, into: { (attributes, price, translation, categories) in
-            return ProductResponseBody(id: product.id, sku: product.sku, attributes: attributes, price: price, translation: translation, categories: categories)
+        self = App.map(to: ProductResponseBody.self, attributes, price, translations, categories, into: { (attributes, price, translations, categories) in
+            return ProductResponseBody(id: product.id, sku: product.sku, attributes: attributes, price: price, translations: translations, categories: categories)
         })
     }
 }

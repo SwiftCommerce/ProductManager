@@ -29,10 +29,10 @@ final class Product: Content, MySQLModel, Migration, Parameter {
         }).unwrap(or: Abort(.internalServerError, reason: "No price found for product \(self.id ?? -1)"))
     }
     
-    func translation(with executor: DatabaseConnectable) -> Future<ProductTranslation> {
-        return self.assertId().flatMap(to: ProductTranslation?.self, { (id) in
-            return ProductTranslation.query(on: executor).filter(\.parentId == id).first()
-        }).unwrap(or: Abort(.internalServerError, reason: "No product translation found for product \(self.id ?? -1)"))
+    func translations(with executor: DatabaseConnectable) -> Future<[ProductTranslation]> {
+        return self.assertId().flatMap(to: [ProductTranslation].self, { (id) in
+            return ProductTranslation.query(on: executor).filter(\.parentId == id).all()
+        })
     }
     
     func categories(with executor: DatabaseConnectable) -> Future<[Category]> {
@@ -50,7 +50,7 @@ final class Product: Content, MySQLModel, Migration, Parameter {
         
         let categories = self.categories(with: executor).flatMap(to: Void.self) { $0.map({ $0.delete(on: executor) }).flatten().transform(to: ()) }
         let attributes = self.attributes(with: executor).flatMap(to: Void.self) { $0.map({ $0.delete(on: executor) }).flatten().transform(to: ()) }
-        let translation = self.translation(with: executor).delete(on: executor).transform(to: ())
+        let translation = self.translations(with: executor).flatMap(to: Void.self) { $0.map({ $0.delete(on: executor) }).flatten().transform(to: ()) }
         let product = self.delete(on: executor).delete(on: executor).transform(to: ())
         let price = self.price(with: executor).delete(on: executor).transform(to: ())
         

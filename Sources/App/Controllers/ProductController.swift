@@ -6,6 +6,8 @@ final class ProductController: RouteCollection {
         
         products.get(use: index)
         products.get(Product.parameter, use: show)
+        
+        products.post(use: create)
     }
     
     func index(_ request: Request)throws -> Future<[ProductResponseBody]> {
@@ -20,5 +22,11 @@ final class ProductController: RouteCollection {
         return try request.parameter(Product.self).flatMap(to: ProductResponseBody.self, { (product) in
             return Future<ProductResponseBody>.init(product: product, executedWith: request)
         })
+    }
+    
+    func create(_ request: Request)throws -> Future<ProductResponseBody> {
+        let sku = request.content.get(String.self, at: "sku")
+        let product = sku.map(to: Product.self, { (sku) in return Product(sku: sku) })
+        return product.flatMap(to: ProductResponseBody.self, { (product) in Future(product: product, executedWith: request) })
     }
 }

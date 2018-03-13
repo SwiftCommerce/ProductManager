@@ -44,14 +44,19 @@ final class Category: Content, MySQLModel, Migration {
 struct CategoryResponseBody: Content {
     let id: Int?
     let name: String
-    let subcategories: [Category]
+    let subcategories: [CategoryResponseBody]
+    let translations: [TranslationResponseBody]
 }
 
 extension Future where T == CategoryResponseBody {
     init(category: Category, executedWith executor: DatabaseConnectable) {
-        self = category.subCategories(with: executor).map(to: CategoryResponseBody.self, { (categories) in
-            return CategoryResponseBody(id: category.id, name: category.name, subcategories: categories)
-        })
+        let categories = category.subCategories(with: executor).flatMap(to: [CategoryResponseBody].self) { (categories) in
+            return categories.map({ Future(category: $0, executedWith: executor) }).flatten()
+        }
+        
+        self = Async.map(to: CategoryResponseBody.self, categories, category.translations(with: executor)) { (subCategories, translations) in
+            return CategoryResponseBody(id: category.id, name: category.name, subcategories: subCategories, translations: translations.map({ TranslationResponseBody($0) }))
+        }
     }
 }
 

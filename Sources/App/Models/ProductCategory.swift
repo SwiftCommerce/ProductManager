@@ -23,3 +23,9 @@ final class ProductCategory: MySQLPivot, Migration {
         self.categoryId = categoryId
     }
 }
+
+extension Product {
+    var categories: Siblings<Product, Category, ProductCategory> {
+        return self.siblings()
+    }
+}

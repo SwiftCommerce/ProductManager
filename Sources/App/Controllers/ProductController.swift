@@ -8,6 +8,8 @@ final class ProductController: RouteCollection {
         products.get(Product.parameter, use: show)
         
         products.post(use: create)
+        
+        products.delete(Product.parameter, use: delete)
     }
     
     func index(_ request: Request)throws -> Future<[ProductResponseBody]> {
@@ -28,5 +30,9 @@ final class ProductController: RouteCollection {
         let sku = request.content.get(String.self, at: "sku")
         let product = sku.map(to: Product.self, { (sku) in return Product(sku: sku) })
         return product.flatMap(to: ProductResponseBody.self, { (product) in Future(product: product, executedWith: request) })
+    }
+    
+    func delete(_ request: Request)throws -> Future<HTTPStatus> {
+        return try request.parameter(Product.self).delete(on: request).transform(to: .noContent)
     }
 }

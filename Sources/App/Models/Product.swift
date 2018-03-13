@@ -44,4 +44,16 @@ final class Product: Content, MySQLModel, Migration, Parameter {
         
         return result.future
     }
+    
+    func delete(with executor: DatabaseConnectable) -> Future<Void> {
+        guard self.id != nil else { return Future(()) }
+        
+        let categories = self.categories(with: executor).flatMap(to: Void.self) { $0.map({ $0.delete(on: executor) }).flatten().transform(to: ()) }
+        let attributes = self.attributes(with: executor).flatMap(to: Void.self) { $0.map({ $0.delete(on: executor) }).flatten().transform(to: ()) }
+        let translation = self.translation(with: executor).delete(on: executor).transform(to: ())
+        let product = self.delete(on: executor).delete(on: executor).transform(to: ())
+        let price = self.price(with: executor).delete(on: executor).transform(to: ())
+        
+        return [categories, attributes, translation, product, price].flatten()
+    }
 }

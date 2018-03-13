@@ -1,4 +1,4 @@
-final class Product: Content, MySQLModel, Migration {
+final class Product: Content, MySQLModel, Migration, Parameter {
     var id: Int?
     let sku: String
     

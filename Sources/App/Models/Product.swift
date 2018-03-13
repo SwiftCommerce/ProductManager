@@ -28,4 +28,10 @@ final class Product: Content, MySQLModel, Migration {
             return Price.query(on: executor).filter(\.productId == id).first()
         }).unwrap(or: Abort(.internalServerError, reason: "No price found for product \(self.id ?? -1)"))
     }
+    
+    func translation(with executor: DatabaseConnectable) -> Future<ProductTranslation> {
+        return self.assertId().flatMap(to: ProductTranslation?.self, { (id) in
+            return ProductTranslation.query(on: executor).filter(\.parentId == id).first()
+        }).unwrap(or: Abort(.internalServerError, reason: "No product translation found for product \(self.id ?? -1)"))
+    }
 }

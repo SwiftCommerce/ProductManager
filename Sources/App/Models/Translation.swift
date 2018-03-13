@@ -23,7 +23,7 @@ final class ProductTranslation: Translation {
     }
     
     convenience init(name: String, description: String, languageCode: String, parentId: Int, price: Float) {
-        let price = Price(price: price, activeFrom: nil, activeTo: nil, active: nil, productId: parentId)
+        let price = Price(price: price, activeFrom: nil, activeTo: nil, active: nil, translationId: parentId)
         self.init(name: name, description: description, languageCode: languageCode, parentId: parentId, price: price)
     }
 }

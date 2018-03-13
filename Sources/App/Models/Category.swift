@@ -30,4 +30,11 @@ final class Category: Content, MySQLModel, Migration {
             return Category.query(on: executor).filter(\.parentId == id).all()
         })
     }
+    
+    func add(child category: Category)throws {
+        guard let id = self.id else {
+            fatalError("FIXME: Throw a `FluentError`")
+        }
+        category.parentId = id
+    }
 }

@@ -22,4 +22,10 @@ final class Product: Content, MySQLModel, Migration {
             return Attribute.query(on: executor).filter(\.productId == id).all()
         })
     }
+    
+    func price(with executor: DatabaseConnectable) -> Future<Price> {
+        return self.assertId().flatMap(to: Price?.self, { (id) in
+            return Price.query(on: executor).filter(\.productId == id).first()
+        }).unwrap(or: Abort(.internalServerError, reason: "No price found for product \(self.id ?? -1)"))
+    }
 }

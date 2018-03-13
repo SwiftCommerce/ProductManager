@@ -34,4 +34,14 @@ final class Product: Content, MySQLModel, Migration {
             return ProductTranslation.query(on: executor).filter(\.parentId == id).first()
         }).unwrap(or: Abort(.internalServerError, reason: "No product translation found for product \(self.id ?? -1)"))
     }
+    
+    func categories(with executor: DatabaseConnectable) -> Future<[Category]> {
+        let result = Promise<[Category]>()
+        
+        do {
+            return try self.categories.query(on: executor).all()
+        } catch { result.fail(error) }
+        
+        return result.future
+    }
 }

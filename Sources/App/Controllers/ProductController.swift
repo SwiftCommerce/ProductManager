@@ -1,8 +1,11 @@
+import Vapor
+
 final class ProductController: RouteCollection {
     func boot(router: Router) throws {
         let products = router.grouped("products")
         
         products.get(use: index)
+        products.get(Product.parameter, use: show)
     }
     
     func index(_ request: Request)throws -> Future<[ProductResponseBody]> {
@@ -10,6 +13,12 @@ final class ProductController: RouteCollection {
             return products.map({ (product) in
                 return Future<ProductResponseBody>.init(product: product, executedWith: request)
             }).flatten()
+        })
+    }
+    
+    func show(_ request: Request)throws -> Future<ProductResponseBody> {
+        return try request.parameter(Product.self).flatMap(to: ProductResponseBody.self, { (product) in
+            return Future<ProductResponseBody>.init(product: product, executedWith: request)
         })
     }
 }

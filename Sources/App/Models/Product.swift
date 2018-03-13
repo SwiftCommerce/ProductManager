@@ -23,12 +23,6 @@ final class Product: Content, MySQLModel, Migration, Parameter {
         })
     }
     
-    func price(with executor: DatabaseConnectable) -> Future<Price> {
-        return self.assertId().flatMap(to: Price?.self, { (id) in
-            return Price.query(on: executor).filter(\.productId == id).first()
-        }).unwrap(or: Abort(.internalServerError, reason: "No price found for product \(self.id ?? -1)"))
-    }
-    
     func translations(with executor: DatabaseConnectable) -> Future<[ProductTranslation]> {
         return self.assertId().flatMap(to: [ProductTranslation].self, { (id) in
             return ProductTranslation.query(on: executor).filter(\.parentId == id).all()
@@ -52,8 +46,7 @@ final class Product: Content, MySQLModel, Migration, Parameter {
         let attributes = self.attributes(with: executor).flatMap(to: Void.self) { $0.map({ $0.delete(on: executor) }).flatten().transform(to: ()) }
         let translation = self.translations(with: executor).flatMap(to: Void.self) { $0.map({ $0.delete(on: executor) }).flatten().transform(to: ()) }
         let product = self.delete(on: executor).delete(on: executor).transform(to: ())
-        let price = self.price(with: executor).delete(on: executor).transform(to: ())
         
-        return [categories, attributes, translation, product, price].flatten()
+        return [categories, attributes, translation, product].flatten()
     }
 }

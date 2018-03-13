@@ -7,9 +7,9 @@ final class Price: Content, MySQLModel, Migration {
     let activeFrom: Date
     let activeTo: Date
     var active: Bool
-    let productId: Product.ID
+    let translationId: Product.ID
     
-    init(price: Float, activeFrom: Date?, activeTo: Date?, active: Bool?, productId: Product.ID) {
+    init(price: Float, activeFrom: Date?, activeTo: Date?, active: Bool?, translationId: ProductTranslation.ID) {
         let af = activeFrom ?? Date()
         let at: Date = activeTo ?? Date.distantFuture
         
@@ -17,7 +17,7 @@ final class Price: Content, MySQLModel, Migration {
         self.activeFrom = af
         self.activeTo = at
         self.active = active ?? (Date() > af && Date() < at)
-        self.productId = productId
+        self.translationId = translationId
     }
     
     convenience init(from decoder: Decoder)throws {
@@ -27,7 +27,7 @@ final class Price: Content, MySQLModel, Migration {
             activeFrom: container.decodeIfPresent(Date.self, forKey: .activeFrom),
             activeTo: container.decodeIfPresent(Date.self, forKey: .activeTo),
             active: container.decodeIfPresent(Bool.self, forKey: .active),
-            productId: container.decode(Product.ID.self, forKey: .productId)
+            translationId: container.decode(Product.ID.self, forKey: .translationId)
         )
     }
 }

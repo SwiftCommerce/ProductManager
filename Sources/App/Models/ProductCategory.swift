@@ -29,3 +29,9 @@ extension Product {
         return self.siblings()
     }
 }
+
+extension Category {
+    var products: Siblings<Category, Product, ProductCategory> {
+        return self.siblings()
+    }
+}

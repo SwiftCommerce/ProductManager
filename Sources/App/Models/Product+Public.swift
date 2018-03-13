@@ -1,5 +1,5 @@
 struct ProductResponseBody: Content {
-    let id: Int
+    let id: Int?
     let sku: String
     let attributes: [Attribute]
     let price: Price
@@ -15,10 +15,7 @@ extension Future where T == ProductResponseBody {
         let categories = product.categories(with: executor)
         
         self = App.map(to: ProductResponseBody.self, attributes, price, translation, categories, into: { (attributes, price, translation, categories) in
-            guard let id = product.id else {
-                throw Abort(.internalServerError, reason: "")
-            }
-            return ProductResponseBody(id: id, sku: product.sku, attributes: attributes, price: price, translation: translation, categories: categories)
+            return ProductResponseBody(id: product.id, sku: product.sku, attributes: attributes, price: price, translation: translation, categories: categories)
         })
     }
 }

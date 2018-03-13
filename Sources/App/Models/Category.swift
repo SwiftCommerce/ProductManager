@@ -24,4 +24,10 @@ final class Category: Content, MySQLModel, Migration {
             return CategoryTranslation.query(on: executor).filter(\.parentId == id).first()
         }).unwrap(or: Abort(.internalServerError, reason: "No category translation found for category \(self.id ?? -1)"))
     }
+    
+    func subCategories(with executor: DatabaseConnectable) -> Future<[Category]> {
+        return self.assertId().flatMap(to: [Category].self, { (id) in
+            return Category.query(on: executor).filter(\.parentId == id).all()
+        })
+    }
 }

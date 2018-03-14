@@ -40,12 +40,18 @@ final class Product: Content, MySQLModel, Migration, Parameter {
     }
     
     func delete(with executor: DatabaseConnectable) -> Future<Void> {
-        guard self.id != nil else { return Future(()) }
+        guard let id = self.id else { return Future(()) }
         
-        let categories = self.categories(with: executor).flatMap(to: Void.self) { $0.map({ $0.delete(on: executor) }).flatten().transform(to: ()) }
-        let attributes = self.attributes(with: executor).flatMap(to: Void.self) { $0.map({ $0.delete(on: executor) }).flatten().transform(to: ()) }
-        let translation = self.translations(with: executor).flatMap(to: Void.self) { $0.map({ $0.delete(on: executor) }).flatten().transform(to: ()) }
-        let product = self.delete(on: executor).delete(on: executor).transform(to: ())
+        let categories = self.categories(with: executor).map(to: [Int].self) { categories in
+            return categories.compactMap({ $0.id })
+        }.flatMap(to: [Int].self) { (ids) in
+            return ProductCategory.query(on: executor).filter(\.productId == id).filter(\.categoryId, in: ids).delete().transform(to: ids)
+        }.flatMap(to: Void.self) { (ids) in
+            return Category.query(on: executor).filter(\.id, in: ids).delete()
+        }
+        let attributes = Attribute.query(on: executor).filter(\.productId == id).delete()
+        let translation = ProductTranslation.query(on: executor).filter(\.parentId == id).delete()
+        let product = self.delete(with: executor)
         
         return [categories, attributes, translation, product].flatten()
     }

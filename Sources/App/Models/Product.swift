@@ -57,15 +57,17 @@ struct ProductResponseBody: Content {
     let id: Int?
     let sku: String
     let attributes: [Attribute]
-    let translations: [ProductTranslation]
-    let categories: [Category]
+    let translations: [TranslationResponseBody]
+    let categories: [CategoryResponseBody]
 }
 
 extension Future where T == ProductResponseBody {
     init(product: Product, executedWith executor: DatabaseConnectable) {
         let attributes = product.attributes(with: executor)
-        let translations = product.translations(with: executor)
-        let categories = product.categories(with: executor)
+        let translations = product.translations(with: executor).map(to: [TranslationResponseBody].self) { $0.map({ TranslationResponseBody($0) }) }
+        let categories = product.categories(with: executor).flatMap(to: [CategoryResponseBody].self) {
+            $0.map({ Future<CategoryResponseBody>(category: $0, executedWith: executor) }).flatten()
+        }
         
         self = Async.map(to: ProductResponseBody.self, attributes, translations, categories, { (attributes, translations, categories) in
             return ProductResponseBody(id: product.id, sku: product.sku, attributes: attributes, translations: translations, categories: categories)

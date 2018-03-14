@@ -60,10 +60,10 @@ extension Future where T == CategoryResponseBody {
     }
 }
 
-extension Future {
-    func category(_ category: Category, with executor: DatabaseConnectable) -> Future<CategoryResponseBody> {
-        return self.flatMap(to: CategoryResponseBody.self, { _ in
-            return Future<CategoryResponseBody>(category: category, executedWith: executor)
+extension Future where T == Category {
+    func response(with executor: DatabaseConnectable) -> Future<CategoryResponseBody> {
+        return self.flatMap(to: CategoryResponseBody.self, { this in
+            return Future<CategoryResponseBody>(category: this, executedWith: executor)
         })
     }
 }

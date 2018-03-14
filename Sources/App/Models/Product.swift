@@ -75,10 +75,10 @@ extension Future where T == ProductResponseBody {
     }
 }
 
-extension Future {
-    func product(_ product: Product, with executor: DatabaseConnectable) -> Future<ProductResponseBody> {
-        return self.flatMap(to: ProductResponseBody.self, { _ in
-            return Future<ProductResponseBody>(product: product, executedWith: executor)
+extension Future where T == Product {
+    func response(with executor: DatabaseConnectable) -> Future<ProductResponseBody> {
+        return self.flatMap(to: ProductResponseBody.self, { this in
+            return Future<ProductResponseBody>(product: this, executedWith: executor)
         })
     }
 }

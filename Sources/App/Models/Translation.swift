@@ -1,3 +1,5 @@
+import Foundation
+
 // MARK: - Declaration
 
 protocol Translation: Content, MySQLModel, Migration {
@@ -49,6 +51,16 @@ final class CategoryTranslation: Translation {
 }
 
 // MARK: - Public
+
+struct TranslationRequestContent: Content {
+    let name: String
+    let description: String
+    let languageCode: String
+    let price: Float?
+    let priceActiveFrom: Date?
+    let priceActiveTo: Date?
+    let priceActive: Bool?
+}
 
 struct TranslationResponseBody: Content {
     let id: Int?

@@ -21,15 +21,12 @@ final class ProductController: RouteCollection {
     }
     
     func show(_ request: Request)throws -> Future<ProductResponseBody> {
-        return try request.parameter(Product.self).flatMap(to: ProductResponseBody.self, { (product) in
-            return Future<ProductResponseBody>.init(product: product, executedWith: request)
-        })
+        return try request.parameter(Product.self).response(with: request)
     }
     
     func create(_ request: Request)throws -> Future<ProductResponseBody> {
         let sku = request.content.get(String.self, at: "sku")
-        let product = sku.map(to: Product.self, { (sku) in return Product(sku: sku) })
-        return product.flatMap(to: ProductResponseBody.self, { (product) in Future(product: product, executedWith: request) })
+        return sku.map(to: Product.self, { (sku) in return Product(sku: sku) }).save(on: request).response(with: request)
     }
     
     func delete(_ request: Request)throws -> Future<HTTPStatus> {

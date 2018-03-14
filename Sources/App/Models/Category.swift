@@ -1,4 +1,4 @@
-final class Category: Content, MySQLModel, Migration {
+final class Category: Content, MySQLModel, Migration, Parameter {
     var id: Int?
     
     let name: String

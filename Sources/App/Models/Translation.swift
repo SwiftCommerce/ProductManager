@@ -9,6 +9,18 @@ protocol Translation: Content, MySQLModel, Migration {
     var parentId: Self.ID { get }
 }
 
+extension Translation {
+    func response() -> TranslationResponseBody {
+        return TranslationResponseBody(self)
+    }
+}
+
+extension Future where T: Translation {
+    func response() -> Future<TranslationResponseBody> {
+        return self.map(to: TranslationResponseBody.self, { TranslationResponseBody($0) })
+    }
+}
+
 // MARK: - Implementations
 
 final class ProductTranslation: Translation {

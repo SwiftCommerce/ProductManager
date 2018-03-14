@@ -48,7 +48,7 @@ final class CategoryTranslation: Translation {
     }
 }
 
-// MAR: - Public
+// MARK: - Public
 
 struct TranslationResponseBody: Content {
     let id: Int?

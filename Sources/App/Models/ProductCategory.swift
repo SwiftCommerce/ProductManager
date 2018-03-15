@@ -35,3 +35,11 @@ extension Category {
         return self.siblings()
     }
 }
+
+extension Siblings where Base.Database: QuerySupporting, Base.ID: KeyStringDecodable {
+    func deleteConnections(on executor: DatabaseConnectable) -> Future<Void> {
+        return Future.flatMap {
+            return try Through.query(on: executor).filter(self.basePivotField == self.base.requireID()).delete()
+        }
+    }
+}

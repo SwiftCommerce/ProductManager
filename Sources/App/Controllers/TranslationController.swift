@@ -1,4 +1,4 @@
-final class TranslationController<Model: Translation>: RouteCollection {
+final class TranslationController<Parent: Model & Parameter, Trans: Translation>: RouteCollection {
     let root: String
     
     init(root: String) {

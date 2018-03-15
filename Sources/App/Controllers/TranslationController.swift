@@ -1,3 +1,4 @@
+
 final class TranslationController<Parent: Model & Parameter, Trans: Translation>: RouteCollection {
     let root: String
     
@@ -5,5 +6,7 @@ final class TranslationController<Parent: Model & Parameter, Trans: Translation>
         self.root = root
     }
     
-    func boot(router: Router) throws {}
+    func boot(router: Router) throws {
+        let group = router.grouped(.constants([.string(root)]), Parent.parameter, "translations", Trans.parameter)
+    }
 }

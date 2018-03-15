@@ -10,7 +10,7 @@ public func configure(
     _ services: inout Services
 ) throws {
     // Register providers first
-//    try services.register(FluentSQLiteProvider())
+    try services.register(FluentMySQLProvider())
 
     // Register routes to the router
     let router = EngineRouter.default()

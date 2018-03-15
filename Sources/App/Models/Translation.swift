@@ -19,7 +19,6 @@ extension Translation {
         if let productTranslation = self as? ProductTranslation, let id = productTranslation.priceId {
             price = Price.find(id, on: executor)
         } else {
-            // HACK: It's bad, but I had to create a whole promise instead of a future to return a `nil` price object.
             price = Future(nil)
         }
         

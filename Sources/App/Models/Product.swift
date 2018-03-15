@@ -25,7 +25,7 @@ final class Product: Content, MySQLModel, Migration, Parameter {
     
     func translations(with executor: DatabaseConnectable) -> Future<[ProductTranslation]> {
         return self.assertId().flatMap(to: [ProductTranslation].self, { (id) in
-            return ProductTranslation.query(on: executor).filter(\.parentId == id).all()
+            return try self.translations.query(on: executor).all()
         })
     }
     

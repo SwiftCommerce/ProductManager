@@ -99,11 +99,3 @@ extension Future where T: Translation {
         })
     }
 }
-
-extension Future {
-    func append<U>(_ element: U) -> Future<(T, U)> {
-        return self.map(to: (T, U).self, { (this) in
-            return (this, element)
-        })
-    }
-}

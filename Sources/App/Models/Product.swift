@@ -50,7 +50,7 @@ final class Product: Content, MySQLModel, Migration, Parameter {
             return Category.query(on: executor).filter(\.id, in: ids).delete()
         }
         let attributes = Attribute.query(on: executor).filter(\.productId == id).delete()
-        let translation = ProductTranslation.query(on: executor).filter(\.parentId == id).delete()
+        let translation = self.translations.deleteConnections(on: executor)
         let product = self.delete(with: executor)
         
         return [categories, attributes, translation, product].flatten()

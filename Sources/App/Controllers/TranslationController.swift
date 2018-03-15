@@ -1,5 +1,6 @@
-
 final class TranslationController<Parent: Model & Parameter, Trans: Translation>: RouteCollection {
+    typealias BasicResponse = Future<TranslationResponseBody>
+    
     let root: String
     
     init(root: String) {

@@ -13,11 +13,19 @@ extension Translation {
     static var idKey: WritableKeyPath<Self, String?> {
         return \.name
     }
-}
-
-extension Future where T: Translation {
-    func response() -> Future<TranslationResponseBody> {
-        return self.map(to: TranslationResponseBody.self, { TranslationResponseBody($0) })
+    
+    func response(on executor: DatabaseConnectable) -> Future<TranslationResponseBody> {
+        let price: Future<Price?>
+        if let productTranslation = self as? ProductTranslation, let id = productTranslation.priceId {
+            price = Price.find(id, on: executor)
+        } else {
+            // HACK: It's bad, but I had to create a whole promise instead of a future to return a `nil` price object.
+            price = Future(nil)
+        }
+        
+        return price.map(to: TranslationResponseBody.self, { (price) in
+            return TranslationResponseBody(self, price: price)
+        })
     }
 }
 
@@ -28,19 +36,14 @@ final class ProductTranslation: Translation {
     let description: String
     let languageCode: String
     let parentId: Int
-    let price: Price
+    let priceId: Price.ID?
     
-    init(name: String, description: String, languageCode: String, parentId: Int, price: Price) {
+    init(name: String, description: String, languageCode: String, parentId: Int, priceId: Price.ID?) {
         self.name = name
         self.description = description
         self.languageCode = languageCode
         self.parentId = parentId
-        self.price = price
-    }
-    
-    convenience init(name: String, description: String, languageCode: String, parentId: Int, price: Float) {
-        let price = Price(price: price, activeFrom: nil, activeTo: nil, active: nil, translationId: parentId)
-        self.init(name: name, description: description, languageCode: languageCode, parentId: parentId, price: price)
+        self.priceId = priceId
     }
 }
 
@@ -83,9 +86,24 @@ struct TranslationResponseBody: Content {
         self.languageCode = translation.languageCode
         self.parentId = translation.parentId
         
-        if let prodTrans = translation as? ProductTranslation {
-            self.price = prodTrans.price
+        if translation as? ProductTranslation != nil {
+            self.price = price
         } else { self.price = nil }
     }
 }
 
+extension Future where T: Translation {
+    func respones(on executor: DatabaseConnectable) -> Future<TranslationResponseBody> {
+        return self.flatMap(to: TranslationResponseBody.self, { (this) in
+            return this.response(on: executor)
+        })
+    }
+}
+
+extension Future {
+    func append<U>(_ element: U) -> Future<(T, U)> {
+        return self.map(to: (T, U).self, { (this) in
+            return (this, element)
+        })
+    }
+}

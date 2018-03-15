@@ -70,7 +70,11 @@ struct ProductResponseBody: Content {
 extension Future where T == ProductResponseBody {
     init(product: Product, executedWith executor: DatabaseConnectable) {
         let attributes = product.attributes(with: executor)
-        let translations = product.translations(with: executor).map(to: [TranslationResponseBody].self) { $0.map({ TranslationResponseBody($0) }) }
+        
+        let translations = product.translations(with: executor).flatMap(to: [TranslationResponseBody].self) { $0.map({ translation in
+            return translation.response(on: executor)
+        }).flatten() }
+        
         let categories = product.categories(with: executor).flatMap(to: [CategoryResponseBody].self) {
             $0.map({ Future<CategoryResponseBody>(category: $0, executedWith: executor) }).flatten()
         }

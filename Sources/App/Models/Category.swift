@@ -55,7 +55,12 @@ extension Future where T == CategoryResponseBody {
         }
         
         self = Async.map(to: CategoryResponseBody.self, categories, category.translations(with: executor)) { (subCategories, translations) in
-            return CategoryResponseBody(id: category.id, name: category.name, subcategories: subCategories, translations: translations.map({ TranslationResponseBody($0) }))
+            return CategoryResponseBody(
+                id: category.id,
+                name: category.name,
+                subcategories: subCategories,
+                translations: translations.map({ TranslationResponseBody($0, price: nil) })
+            )
         }
     }
 }

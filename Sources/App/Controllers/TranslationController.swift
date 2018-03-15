@@ -8,6 +8,6 @@ final class TranslationController<Parent: Model & Parameter, Trans: Translation>
     }
     
     func boot(router: Router) throws {
-        let group = router.grouped(.constants([.string(root)]), Parent.parameter, "translations", Trans.parameter)
+        let group = router.grouped(.constants([.string(root)]), Parent.parameter, "translations")
     }
 }

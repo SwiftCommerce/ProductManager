@@ -2,16 +2,16 @@ import Foundation
 
 // MARK: - Declaration
 
-protocol Translation: Content, MySQLModel, Migration {
-    var name: String { get }
+protocol Translation: Content, Model, Migration where Self.Database == MySQLDatabase, Self.ID == String {
+    var name: String? { get set }
     var description: String { get }
     var languageCode: String { get }
-    var parentId: Self.ID { get }
+    var parentId: Int { get }
 }
 
 extension Translation {
-    func response() -> TranslationResponseBody {
-        return TranslationResponseBody(self)
+    static var idKey: WritableKeyPath<Self, String?> {
+        return \.name
     }
 }
 
@@ -24,9 +24,7 @@ extension Future where T: Translation {
 // MARK: - Implementations
 
 final class ProductTranslation: Translation {
-    var id: Int?
-
-    let name: String
+    var name: String?
     let description: String
     let languageCode: String
     let parentId: Int
@@ -47,9 +45,7 @@ final class ProductTranslation: Translation {
 }
 
 final class CategoryTranslation: Translation {
-    var id: Int?
-    
-    let name: String
+    var name: String?
     let description: String
     let languageCode: String
     let parentId: Int
@@ -75,15 +71,13 @@ struct TranslationRequestContent: Content {
 }
 
 struct TranslationResponseBody: Content {
-    let id: Int?
-    let name: String
+    let name: String?
     let description: String
     let languageCode: String
     let parentId: Int
     let price: Price?
     
-    init<Tran>(_ translation: Tran) where Tran: Translation {
-        self.id = translation.id
+    init<Tran>(_ translation: Tran, price: Price?) where Tran: Translation {
         self.name = translation.name
         self.description = translation.description
         self.languageCode = translation.languageCode
@@ -94,3 +88,4 @@ struct TranslationResponseBody: Content {
         } else { self.price = nil }
     }
 }
+

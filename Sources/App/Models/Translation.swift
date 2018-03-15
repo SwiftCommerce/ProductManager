@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Declaration
 
-protocol Translation: Content, Model, Migration, Parameter where Self.Database == MySQLDatabase, Self.ID == String {
+protocol Translation: Content, Model, Migration, Parameter where Self.Database == MySQLDatabase, Self.ID == String, Self.ResolvedParameter == Future<Self> {
     var name: String? { get set }
     var description: String { get }
     var languageCode: String { get }

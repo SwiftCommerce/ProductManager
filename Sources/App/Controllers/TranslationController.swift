@@ -6,3 +6,7 @@ final class TranslationController: RouteCollection {
         try router.grouped("categories", Category.parameter, "translations").register(collection: CategoryTranslationController())
     }
 }
+
+final class ModelTranslationController<Translation>: RouteCollection where Translation: App.Translation {
+    func boot(router: Router) throws {}
+}

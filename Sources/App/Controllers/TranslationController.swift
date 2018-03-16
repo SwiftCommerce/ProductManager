@@ -7,7 +7,7 @@ final class TranslationController: RouteCollection {
     }
 }
 
-final class ModelTranslationController<Translation>: RouteCollection where Translation: App.Translation {
+final class ModelTranslationController<Translation>: RouteCollection where Translation: App.Translation & TranslationRequestInitializable {
     let root: PathComponent
     
     init(root: String) {

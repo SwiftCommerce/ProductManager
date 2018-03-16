@@ -83,11 +83,3 @@ struct TranslationResponseBody: Content {
         } else { self.price = nil }
     }
 }
-
-extension Future where T: Translation {
-    func response(on executor: DatabaseConnectable) -> Future<TranslationResponseBody> {
-        return self.flatMap(to: TranslationResponseBody.self, { (this) in
-            return this.response(on: executor)
-        })
-    }
-}

@@ -11,6 +11,7 @@ final class ProductTranslationController: RouteCollection {
     func boot(router: Router) throws {
         router.get(use: index)
         router.post(use: add)
+        router.delete(ProductTranslation.parameter, use: remove)
     }
     
     func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
@@ -30,6 +31,16 @@ final class ProductTranslationController: RouteCollection {
         return flatMap(to: TranslationResponseBody.self, product, translation) { (product, translation) in
             return try ProductTranslationPivot(parent: product, translation: translation).save(on: request).transform(to: translation).response(on: request)
         }
+    }
+    
+    func remove(_ request: Request)throws -> Future<HTTPStatus> {
+        let product = try request.parameter(Product.self)
+        let translation = try request.parameter(ProductTranslation.self)
+        
+        return flatMap(to: HTTPStatus.self, product, translation, { (product, translation) in
+            let detached = product.translations.detach(translation, on: request)
+            return detached.transform(to: .noContent)
+        })
     }
 }
 

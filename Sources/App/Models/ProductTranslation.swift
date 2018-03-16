@@ -49,7 +49,7 @@ extension ProductTranslation {
 }
 
 extension CategoryTranslation {
-    var translations: Siblings<CategoryTranslation, Category, CategoryTranslationPivot> {
+    var categories: Siblings<CategoryTranslation, Category, CategoryTranslationPivot> {
         return siblings()
     }
 }

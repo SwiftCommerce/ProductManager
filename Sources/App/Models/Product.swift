@@ -4,27 +4,14 @@ final class Product: Content, MySQLModel, Migration, Parameter {
     
     init(sku: String) { self.sku = sku }
     
-    func assertId() -> Future<Product.ID> {
-        let result = Promise<Product.ID>()
-        
-        if let id = self.id {
-            result.complete(id)
-        } else {
-            fatalError("FIXME: Fail promise with `FluentError`")
-//            result.fail(<#T##error: Error##Error#>)
-        }
-        
-        return result.future
-    }
-    
     func attributes(with executor: DatabaseConnectable) -> Future<[Attribute]> {
-        return self.assertId().flatMap(to: [Attribute].self, { (id) in
+        return self.assertID().flatMap(to: [Attribute].self, { (id) in
             return Attribute.query(on: executor).filter(\.productId == id).all()
         })
     }
     
     func translations(with executor: DatabaseConnectable) -> Future<[ProductTranslation]> {
-        return self.assertId().flatMap(to: [ProductTranslation].self, { (id) in
+        return self.assertID().flatMap(to: [ProductTranslation].self, { (id) in
             return try self.translations.query(on: executor).all()
         })
     }

@@ -6,27 +6,14 @@ final class Category: Content, MySQLModel, Migration, Parameter {
     
     init(name: String) { self.name = name }
     
-    func assertId() -> Future<Category.ID> {
-        let result = Promise<Category.ID>()
-        
-        if let id = self.id {
-            result.complete(id)
-        } else {
-            fatalError("FIXME: Fail promise with `FluentError`")
-//            result.fail(<#T##error: Error##Error#>)
-        }
-        
-        return result.future
-    }
-    
     func translations(with executor: DatabaseConnectable) -> Future<[CategoryTranslation]> {
-        return self.assertId().flatMap(to: [CategoryTranslation].self, { (id) in
+        return self.assertID().flatMap(to: [CategoryTranslation].self, { (id) in
             return try self.translations.query(on: executor).all()
         })
     }
     
     func subCategories(with executor: DatabaseConnectable) -> Future<[Category]> {
-        return self.assertId().flatMap(to: [Category].self, { (id) in
+        return self.assertID().flatMap(to: [Category].self, { (id) in
             return Category.query(on: executor).filter(\.parentId == id).all()
         })
     }

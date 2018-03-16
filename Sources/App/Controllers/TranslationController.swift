@@ -19,6 +19,8 @@ final class ModelTranslationController<Translation>: RouteCollection where Trans
         
         translations.get(use: index)
         translations.get(Translation.parameter, use: show)
+        
+        translations.post(TranslationRequestContent.self, use: create)
     }
     
     func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
@@ -29,5 +31,9 @@ final class ModelTranslationController<Translation>: RouteCollection where Trans
     
     func show(_ request: Request)throws -> Future<TranslationResponseBody> {
         return try request.parameter(Translation.self).response(on: request)
+    }
+    
+    func create(_ request: Request, _ body: TranslationRequestContent)throws -> Future<TranslationResponseBody> {
+        return Translation.create(from: body, with: request)
     }
 }

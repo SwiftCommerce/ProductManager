@@ -24,18 +24,6 @@ final class ProductCategory: MySQLPivot, Migration {
     }
 }
 
-extension Product {
-    var categories: Siblings<Product, Category, ProductCategory> {
-        return self.siblings()
-    }
-}
-
-extension Category {
-    var products: Siblings<Category, Product, ProductCategory> {
-        return self.siblings()
-    }
-}
-
 extension Siblings where Base.Database: QuerySupporting, Base.ID: KeyStringDecodable {
     func deleteConnections(on executor: DatabaseConnectable) -> Future<Void> {
         return Future.flatMap {

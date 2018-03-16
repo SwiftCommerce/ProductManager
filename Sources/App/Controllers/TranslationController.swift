@@ -8,5 +8,11 @@ final class TranslationController: RouteCollection {
 }
 
 final class ModelTranslationController<Translation>: RouteCollection where Translation: App.Translation {
+    let root: PathComponent
+    
+    init(root: String) {
+        self.root = .constants([.string(root)])
+    }
+    
     func boot(router: Router) throws {}
 }

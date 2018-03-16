@@ -29,7 +29,7 @@ extension Translation {
 
 // MARK: - Implementations
 
-final class ProductTranslation: Translation {
+final class ProductTranslation: Translation, TranslationRequestInitializable {
     var name: String?
     let description: String
     let languageCode: String
@@ -41,9 +41,20 @@ final class ProductTranslation: Translation {
         self.languageCode = languageCode
         self.priceId = priceId
     }
+    
+    static func create(from content: TranslationRequestContent, with request: Request) -> Future<TranslationResponseBody> {
+        guard let amount = content.price else {
+            return Future(error: Abort(.badRequest, reason: "Request body must contain 'price' key"))
+        }
+        let price = Price(price: amount, activeFrom: content.priceActiveFrom, activeTo: content.priceActiveTo, active: content.priceActive, translationName: content.name)
+        return price.save(on: request).flatMap(to: TranslationResponseBody.self) { (price) in
+            return try ProductTranslation(name: content.name, description: content.description, languageCode: content.languageCode, priceId: price.requireID())
+                .save(on: request).response(on: request)
+        }
+    }
 }
 
-final class CategoryTranslation: Translation {
+final class CategoryTranslation: Translation, TranslationRequestInitializable {
     var name: String?
     let description: String
     let languageCode: String
@@ -53,9 +64,17 @@ final class CategoryTranslation: Translation {
         self.description = description
         self.languageCode = languageCode
     }
+    
+    static func create(from content: TranslationRequestContent, with request: Request) -> Future<TranslationResponseBody> {
+        return CategoryTranslation(name: content.name, description: content.description, languageCode: content.languageCode).save(on: request).response(on: request)
+    }
 }
 
 // MARK: - Public
+
+protocol TranslationRequestInitializable {
+    static func create(from content: TranslationRequestContent, with request: Request) -> Future<TranslationResponseBody>
+}
 
 struct TranslationRequestContent: Content {
     let name: String

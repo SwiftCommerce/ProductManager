@@ -2,8 +2,8 @@ import Vapor
 
 final class TranslationController: RouteCollection {
     func boot(router: Router) throws {
-        try router.grouped("products", Product.parameter).register(collection: ProductTranslationController())
-        try router.grouped("categories", Category.parameter).register(collection: CategoryTranslationController())
+        try router.grouped("products", Product.parameter, "translations").register(collection: ProductTranslationController())
+        try router.grouped("categories", Category.parameter, "translations").register(collection: CategoryTranslationController())
     }
 }
 

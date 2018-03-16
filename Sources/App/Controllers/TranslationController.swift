@@ -18,11 +18,16 @@ final class ModelTranslationController<Translation>: RouteCollection where Trans
         let translations = router.grouped(self.root, "translations")
         
         translations.get(use: index)
+        translations.get(Translation.parameter, use: show)
     }
     
     func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
         return Translation.query(on: request).all().loop(to: TranslationResponseBody.self, transform: { (translation) in
             return translation.response(on: request)
         })
+    }
+    
+    func show(_ request: Request)throws -> Future<TranslationResponseBody> {
+        return try request.parameter(Translation.self).response(on: request)
     }
 }

@@ -8,7 +8,17 @@ final class TranslationController: RouteCollection {
 }
 
 final class ProductTranslationController: RouteCollection {
-    func boot(router: Router) throws {}
+    func boot(router: Router) throws {
+        router.get(use: index)
+    }
+    
+    func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
+        return try request.parameter(Product.self).flatMap(to: [ProductTranslation].self, { (product) in
+            return try product.translations.query(on: request).all()
+        }).flatMap(to: [TranslationResponseBody].self, { (tranlations) in
+            return tranlations.map({ $0.response(on: request) }).flatten()
+        })
+    }
 }
 
 final class CategoryTranslationController: RouteCollection {

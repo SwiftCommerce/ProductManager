@@ -1,5 +1,13 @@
+import FluentMySQL
+
 typealias ProductTranslationPivot = ModelTranslation<Product, ProductTranslation>
 typealias CategoryTranslationPivot = ModelTranslation<Category, CategoryTranslation>
+
+protocol TranslationParent: MySQLModel {
+    associatedtype TranslationType: Translation
+    
+    var translations: Siblings<Self, TranslationType, ModelTranslation<Self, TranslationType>> { get }
+}
 
 final class ModelTranslation<Parent: MySQLModel, Trans: Translation>: MySQLPivot, Migration {
     typealias Left = Parent
@@ -30,13 +38,13 @@ final class ModelTranslation<Parent: MySQLModel, Trans: Translation>: MySQLPivot
     }
 }
 
-extension Product {
+extension Product: TranslationParent {
     var translations: Siblings<Product, ProductTranslation, ProductTranslationPivot> {
         return siblings()
     }
 }
 
-extension Category {
+extension Category: TranslationParent {
     var translations: Siblings<Category, CategoryTranslation, CategoryTranslationPivot> {
         return siblings()
     }

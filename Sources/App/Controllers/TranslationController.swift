@@ -10,6 +10,7 @@ final class TranslationController: RouteCollection {
 final class ProductTranslationController: RouteCollection {
     func boot(router: Router) throws {
         router.get(use: index)
+        router.post(use: add)
     }
     
     func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
@@ -18,6 +19,17 @@ final class ProductTranslationController: RouteCollection {
         }).flatMap(to: [TranslationResponseBody].self, { (tranlations) in
             return tranlations.map({ $0.response(on: request) }).flatten()
         })
+    }
+    
+    func add(_ request: Request)throws -> Future<TranslationResponseBody> {
+        let product = try request.parameter(Product.self)
+        let translation = request.content.get(String.self, at: "translation_name").flatMap(to: ProductTranslation.self) { (name) in
+            return ProductTranslation.find(name, on: request).unwrap(or: Abort(.badRequest, reason: "No translation found with name '\(name)'"))
+        }
+        
+        return flatMap(to: TranslationResponseBody.self, product, translation) { (product, translation) in
+            return try ProductTranslationPivot(parent: product, translation: translation).save(on: request).transform(to: translation).response(on: request)
+        }
     }
 }
 

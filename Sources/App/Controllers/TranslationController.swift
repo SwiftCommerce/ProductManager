@@ -45,5 +45,38 @@ final class ProductTranslationController: RouteCollection {
 }
 
 final class CategoryTranslationController: RouteCollection {
-    func boot(router: Router) throws {}
+    func boot(router: Router) throws {
+        router.get(use: index)
+        router.post(use: add)
+        router.delete(CategoryTranslation.parameter, use: remove)
+    }
+    
+    func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
+        return try request.parameter(Category.self).flatMap(to: [CategoryTranslation].self, { (category) in
+            return try category.translations.query(on: request).all()
+        }).flatMap(to: [TranslationResponseBody].self, { (tranlations) in
+            return tranlations.map({ $0.response(on: request) }).flatten()
+        })
+    }
+    
+    func add(_ request: Request)throws -> Future<TranslationResponseBody> {
+        let category = try request.parameter(Category.self)
+        let translation = request.content.get(String.self, at: "translation_name").flatMap(to: CategoryTranslation.self) { (name) in
+            return CategoryTranslation.find(name, on: request).unwrap(or: Abort(.badRequest, reason: "No translation found with name '\(name)'"))
+        }
+        
+        return flatMap(to: TranslationResponseBody.self, category, translation) { (category, translation) in
+            return try CategoryTranslationPivot(parent: category, translation: translation).save(on: request).transform(to: translation).response(on: request)
+        }
+    }
+    
+    func remove(_ request: Request)throws -> Future<HTTPStatus> {
+        let category = try request.parameter(Category.self)
+        let translation = try request.parameter(CategoryTranslation.self)
+        
+        return flatMap(to: HTTPStatus.self, category, translation, { (category, translation) in
+            let detached = category.translations.detach(translation, on: request)
+            return detached.transform(to: .noContent)
+        })
+    }
 }

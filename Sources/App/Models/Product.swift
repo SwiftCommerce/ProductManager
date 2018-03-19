@@ -4,12 +4,6 @@ final class Product: Content, MySQLModel, Migration, Parameter {
     
     init(sku: String) { self.sku = sku }
     
-    func attributes(with executor: DatabaseConnectable) -> Future<[Attribute]> {
-        return self.assertID().flatMap(to: [Attribute].self, { (id) in
-            return Attribute.query(on: executor).filter(\.productId == id).all()
-        })
-    }
-    
     func translations(with executor: DatabaseConnectable) -> Future<[ProductTranslation]> {
         return self.assertID().flatMap(to: [ProductTranslation].self, { (id) in
             return try self.translations.query(on: executor).all()
@@ -56,18 +50,20 @@ struct ProductResponseBody: Content {
 
 extension Future where T == ProductResponseBody {
     init(product: Product, executedWith executor: DatabaseConnectable) {
-        let attributes = product.attributes(with: executor)
-        
-        let translations = product.translations(with: executor).flatMap(to: [TranslationResponseBody].self) { $0.map({ translation in
-            return translation.response(on: executor)
-        }).flatten() }
-        
-        let categories = product.categories(with: executor).flatMap(to: [CategoryResponseBody].self) {
-            $0.map({ Future<CategoryResponseBody>(category: $0, executedWith: executor) }).flatten()
-        }
-        
-        self = Async.map(to: ProductResponseBody.self, attributes, translations, categories, { (attributes, translations, categories) in
-            return ProductResponseBody(id: product.id, sku: product.sku, attributes: attributes, translations: translations, categories: categories)
+        self = Future.flatMap({
+            let attributes = try product.attributes.query(on: executor).all()
+            
+            let translations = product.translations(with: executor).flatMap(to: [TranslationResponseBody].self) { $0.map({ translation in
+                return translation.response(on: executor)
+            }).flatten() }
+            
+            let categories = product.categories(with: executor).flatMap(to: [CategoryResponseBody].self) {
+                $0.map({ Future<CategoryResponseBody>(category: $0, executedWith: executor) }).flatten()
+            }
+            
+            return Async.map(to: ProductResponseBody.self, attributes, translations, categories, { (attributes, translations, categories) in
+                return ProductResponseBody(id: product.id, sku: product.sku, attributes: attributes, translations: translations, categories: categories)
+            })
         })
     }
 }

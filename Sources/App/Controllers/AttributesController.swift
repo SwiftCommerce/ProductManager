@@ -8,7 +8,7 @@ final class AttributesController: RouteCollection {
     }
     
     func index(_ request: Request)throws -> Future<[Attribute]> {
-        return try request.parameter(Product.self).flatMap(to: [Attribute].self, { $0.attributes(with: request) })
+        return try request.parameter(Product.self).flatMap(to: [Attribute].self, { try $0.attributes.query(on: request).all() })
     }
     
     func create(_ request: Request, _ attribute: Attribute)throws -> Future<Attribute> {

@@ -30,7 +30,7 @@ final class Product: Content, MySQLModel, Migration, Parameter {
         }.flatMap(to: Void.self) { (ids) in
             return Category.query(on: executor).filter(\.id, in: ids).delete()
         }
-        let attributes = Attribute.query(on: executor).filter(\.productId == id).delete()
+        let attributes = self.attributes.deleteConnections(on: executor)
         let translation = self.translations.deleteConnections(on: executor)
         let product = self.delete(with: executor)
         

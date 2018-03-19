@@ -3,11 +3,9 @@ final class Attribute: Content, MySQLModel, Migration {
     
     let name: String
     var value: String
-    let productId: Product.ID
     
-    init(name: String, value: String, productId: Product.ID) {
+    init(name: String, value: String) {
         self.name = name
         self.value = value
-        self.productId = productId
     }
 }

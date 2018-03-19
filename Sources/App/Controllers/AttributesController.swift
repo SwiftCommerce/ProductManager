@@ -8,6 +8,8 @@ final class AttributesController: RouteCollection {
         attributes.get(Int.parameter, use: show)
         
         attributes.post(Attribute.self, use: create)
+        
+        attributes.delete(Attribute.parameter, use: delete)
     }
     
     func index(_ request: Request)throws -> Future<[Attribute]> {
@@ -28,6 +30,13 @@ final class AttributesController: RouteCollection {
             }
             return attribute.save(on: request)
         }
+    }
+    
+    func delete(_ request: Request)throws -> Future<HTTPStatus> {
+        return try flatMap(to: HTTPStatus.self, request.parameter(Product.self), request.parameter(Attribute.self), { (product, attribute) in
+            let attributes = product.attributes
+            return attributes.detach(attribute, on: request).transform(to: .noContent)
+        })
     }
 }
 

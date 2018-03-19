@@ -1,4 +1,4 @@
-final class ProductAttribute: MySQLPivot {
+final class ProductAttribute: MySQLPivot, Migration {
     typealias Left = Product
     typealias Right = Attribute
     

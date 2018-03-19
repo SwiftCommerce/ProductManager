@@ -1,5 +1,11 @@
 import Vapor
 
+struct TranslationUpdateBody: Content {
+    let languageCode: String?
+    let description: String?
+    let priceId: Int?
+}
+
 final class TranslationController: RouteCollection {
     func boot(router: Router) throws {
         try router.grouped("products", Product.parameter, "translations").register(collection: ProductTranslationController())
@@ -19,12 +25,18 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
     func boot(router: Router) throws {
         let translations = router.grouped(self.root, "translations")
         
+        translations.post(TranslationRequestContent.self, use: create)
+        
         translations.get(use: index)
         translations.get(Translation.parameter, use: show)
         
-        translations.post(TranslationRequestContent.self, use: create)
+        translations.patch(TranslationUpdateBody.self, at: Translation.parameter, use: update)
         
         translations.delete(Translation.parameter, use: delete)
+    }
+    
+    func create(_ request: Request, _ body: TranslationRequestContent)throws -> Future<TranslationResponseBody> {
+        return Translation.create(from: body, with: request)
     }
     
     func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
@@ -37,8 +49,15 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
         return try request.parameter(Translation.self).response(on: request)
     }
     
-    func create(_ request: Request, _ body: TranslationRequestContent)throws -> Future<TranslationResponseBody> {
-        return Translation.create(from: body, with: request)
+    func update(_ request: Request, _ body: TranslationUpdateBody)throws -> Future<TranslationResponseBody> {
+        return try request.parameter(Translation.self).flatMap(to: TranslationResponseBody.self, { (translation) in
+            translation.languageCode = body.languageCode ?? translation.languageCode
+            translation.description = body.description ?? translation.description
+            if let productTranslation = translation as? ProductTranslation {
+                productTranslation.priceId = body.priceId
+            }
+            return translation.save(on: request).response(on: request)
+        })
     }
     
     func delete(_ request: Request)throws -> Future<HTTPStatus> {

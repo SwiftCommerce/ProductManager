@@ -1,4 +1,4 @@
-final class Attribute: Content, MySQLModel, Migration {
+final class Attribute: Content, MySQLModel, Migration, Parameter {
     var id: Int?
     
     let name: String

@@ -26,6 +26,10 @@ final class CategoryController: RouteCollection {
     }
     
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
-        return try request.parameter(Category.self).delete(on: request).transform(to: .noContent)
+        return try request.parameter(Category.self).flatMap(to: Category.self, { (category) in
+            return category.subCategories.deleteConnections(on: request).transform(to: category)
+        }).flatMap(to: HTTPStatus.self, { (cateogory) in
+            return cateogory.delete(on: request).transform(to: .noContent)
+        })
     }
 }

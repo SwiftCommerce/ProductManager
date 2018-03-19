@@ -7,7 +7,7 @@ final class TranslationController: RouteCollection {
     }
 }
 
-final class ModelTranslationController<Translation>: RouteCollection where Translation: App.Translation & TranslationRequestInitializable {
+final class ModelTranslationController<Translation, Parent>: RouteCollection where Translation: App.Translation & TranslationRequestInitializable, Parent: MySQLModel {
     let root: PathComponent
     
     init(root: String) {
@@ -21,6 +21,8 @@ final class ModelTranslationController<Translation>: RouteCollection where Trans
         translations.get(Translation.parameter, use: show)
         
         translations.post(TranslationRequestContent.self, use: create)
+        
+        translations.delete(Translation.parameter, use: delete)
     }
     
     func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
@@ -35,5 +37,26 @@ final class ModelTranslationController<Translation>: RouteCollection where Trans
     
     func create(_ request: Request, _ body: TranslationRequestContent)throws -> Future<TranslationResponseBody> {
         return Translation.create(from: body, with: request)
+    }
+    
+    func delete(_ request: Request)throws -> Future<HTTPStatus> {
+        let translation = try request.parameter(Translation.self)
+        return translation.flatMap(to: Void.self) { (translation) in
+            var deletions: [Future<Void>] = []
+            
+            if let productTranslartion = translation as? ProductTranslation {
+                deletions.append(productTranslartion.prodcuts.deleteConnections(on: request))
+                if let price = productTranslartion.priceId {
+                    deletions.append(Price.query(on: request).filter(\.id == price).delete())
+                }
+            } else if let categoryTranslation = translation as? CategoryTranslation {
+                deletions.append(categoryTranslation.categories.deleteConnections(on: request))
+            } else {
+                throw Abort(.internalServerError, reason: "Unsupported translation type found")
+            }
+            deletions.append(translation.delete(on: request).transform(to: ()))
+            
+            return deletions.flatten()
+        }.transform(to: .noContent)
     }
 }

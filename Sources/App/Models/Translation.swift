@@ -4,8 +4,8 @@ import Foundation
 
 protocol Translation: Content, Model, Migration, Parameter where Self.Database == MySQLDatabase, Self.ID == String, Self.ResolvedParameter == Future<Self> {    
     var name: String? { get set }
-    var description: String { get }
-    var languageCode: String { get }
+    var description: String { get set }
+    var languageCode: String { get set }
 }
 
 extension Translation {
@@ -31,9 +31,9 @@ extension Translation {
 
 final class ProductTranslation: Translation, TranslationRequestInitializable {
     var name: String?
-    let description: String
-    let languageCode: String
-    let priceId: Price.ID?
+    var description: String
+    var languageCode: String
+    var priceId: Price.ID?
     
     init(name: String, description: String, languageCode: String, priceId: Price.ID?) {
         self.name = name
@@ -56,8 +56,8 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
 
 final class CategoryTranslation: Translation, TranslationRequestInitializable {
     var name: String?
-    let description: String
-    let languageCode: String
+    var description: String
+    var languageCode: String
     
     init(name: String, description: String, languageCode: String) {
         self.name = name

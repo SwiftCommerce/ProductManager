@@ -12,6 +12,13 @@ final class AttributesController: RouteCollection {
     }
     
     func create(_ request: Request, _ attribute: Attribute)throws -> Future<Attribute> {
-        return attribute.save(on: request)
+        return Attribute.query(on: request).filter(\.name == attribute.name).count().flatMap(to: Attribute.self) { (attributeCount) in
+            guard attributeCount < 1 else {
+                throw Abort(.badRequest, reason: "Attribute already exists for product with name '\(attribute.name)'")
+            }
+            return attribute.save(on: request)
+        }
     }
 }
+
+

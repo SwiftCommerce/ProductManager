@@ -24,4 +24,18 @@ extension QueryBuilder {
         self.query.action = .update
         return self.execute()
     }
+    
+    @discardableResult
+    public func filter<T>(_ field: KeyPath<Model, T>, in values: [Encodable]?) -> Future<[Model]> where T: KeyStringDecodable {
+        guard let values = values else {
+            return Future([])
+        }
+        
+        let filter = QueryFilter<Model.Database>(
+            entity: Model.entity,
+            method: .subset(field.makeQueryField(), .in, .array(values))
+        )
+        self.addFilter(filter)
+        return self.all()
+    }
 }

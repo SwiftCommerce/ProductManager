@@ -11,13 +11,9 @@ final class Product: Content, MySQLModel, Migration, Parameter {
     }
     
     func categories(with executor: DatabaseConnectable) -> Future<[Category]> {
-        let result = Promise<[Category]>()
-        
-        do {
+        return Future.flatMap({
             return try self.categories.query(on: executor).all()
-        } catch { result.fail(error) }
-        
-        return result.future
+        })
     }
     
     func delete(with executor: DatabaseConnectable) -> Future<Void> {

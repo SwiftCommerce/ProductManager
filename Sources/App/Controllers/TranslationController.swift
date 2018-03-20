@@ -12,6 +12,19 @@ final class TranslationController: RouteCollection {
         try router.grouped("categories", Category.parameter, "translations").register(collection: CategoryTranslationController())
         try router.register(collection: ModelTranslationController<CategoryTranslation, Category>(root: "categories"))
         try router.register(collection: ModelTranslationController<ProductTranslation, Product>(root: "products"))
+        
+        router.patch(PriceUpdateBody.self, at: "products", "translations", ProductTranslation.parameter, "price", use: updatePrice)
+    }
+    
+    func updatePrice(_ request: Request, _ body: PriceUpdateBody)throws -> Future<Price> {
+        return try request.parameter(ProductTranslation.self).flatMap(to: Price.self, { (translation) in
+            guard let price = translation.priceId else {
+                throw Abort(.notFound, reason: "The given translation does not have a price conected to it")
+            }
+            return Price.query(on: request).filter(\.id == price).first().unwrap(or: Abort(.internalServerError, reason: "Bad price ID connected to translation"))
+        }).flatMap(to: Price.self, { (price) in
+            return price.update(with: body, on: request).transform(to: price)
+        })
     }
 }
 
@@ -54,7 +67,7 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
             translation.languageCode = body.languageCode ?? translation.languageCode
             translation.description = body.description ?? translation.description
             if let productTranslation = translation as? ProductTranslation {
-                productTranslation.priceId = body.priceId
+                productTranslation.priceId = body.priceId            
             }
             return translation.save(on: request).response(on: request)
         })

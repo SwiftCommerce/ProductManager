@@ -3,9 +3,9 @@ import Foundation
 final class Price: Content, MySQLModel, Migration {
     var id: Int?
     
-    let price: Float
-    let activeFrom: Date
-    let activeTo: Date
+    var price: Float
+    var activeFrom: Date
+    var activeTo: Date
     var active: Bool
     let translationName: ProductTranslation.ID
     
@@ -32,4 +32,19 @@ final class Price: Content, MySQLModel, Migration {
         
         self.id = try container.decodeIfPresent(Int.self, forKey: .id)
     }
+    
+    func update(with body: PriceUpdateBody, on executor: DatabaseConnectable) -> Future<Void> {
+        self.price = body.price ?? self.price
+        self.activeFrom = body.activeFrom ?? self.activeFrom
+        self.activeTo = body.activeTo ?? self.activeTo
+        self.active = body.active ?? self.active
+        return self.save(on: executor).transform(to: ())
+    }
+}
+
+struct PriceUpdateBody: Content {
+    let price: Float?
+    let activeFrom: Date?
+    let activeTo: Date?
+    let active: Bool?
 }

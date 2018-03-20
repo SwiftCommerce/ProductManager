@@ -9,26 +9,31 @@ public func configure(
     _ env: inout Environment,
     _ services: inout Services
 ) throws {
-    // Register providers first
+    // Register the `FluentMySQLProvider`.
+    // This creates the connection to the database and runs the model migrations.
     try services.register(FluentMySQLProvider())
 
-    // Register routes to the router
+    // Create a router,
+    // register all the app's routes to it,
+    // and register the router with the app.
     let router = EngineRouter.default()
     try routes(router)
     services.register(router, as: Router.self)
 
-    // Register middleware
+    // Register middleware with the app's services.
+    // These middleware will automaticly be added to all routes.
     var middlewares = MiddlewareConfig() // Create _empty_ middleware config
     middlewares.use(DateMiddleware.self) // Adds `Date` header to responses
     middlewares.use(ErrorMiddleware.self) // Catches errors and converts to HTTP response
     services.register(middlewares)
 
-    // Configure a MySQL database
+    // Configure a MySQL database.
     var databases = DatabaseConfig()
     let databaseName = "product_manager"
     databases.add(database: MySQLDatabase(hostname: "localhost", user: "root", password: nil, database: databaseName), as: .mysql)
 
-    // Configure migrations
+    // Configure migrations.
+    // Add all models to the migration config so the `FluentProvider` will create tables for them in the database.
     var migrations = MigrationConfig()
     migrations.add(model: Category.self, database: .mysql)
     migrations.add(model: Product.self, database: .mysql)
@@ -41,6 +46,7 @@ public func configure(
     migrations.add(model: ProductTranslationPivot.self, database: .mysql)
     migrations.add(model: CategoryTranslationPivot.self, database: .mysql)
     
+    // Register Database and Migration configurations with the application services.
     services.register(databases)
     services.register(migrations)
 }

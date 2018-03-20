@@ -1,6 +1,6 @@
 struct CategoryUpdateBody: Content {
-    let attach: [Category.ID]
-    let detach: [Category.ID]
+    let attach: [Category.ID]?
+    let detach: [Category.ID]?
 }
 
 final class CategoryController: RouteCollection {
@@ -33,8 +33,8 @@ final class CategoryController: RouteCollection {
     }
    
     func update(_ request: Request, _ categories: CategoryUpdateBody)throws -> Future<CategoryResponseBody> {
-        let attach = Category.query(on: request).filter(\.id, in: categories.attach).all()
-        let detach = Category.query(on: request).filter(\.id, in: categories.detach).all()
+        let attach = Category.query(on: request).filter(\.id, in: categories.attach ?? []).all()
+        let detach = Category.query(on: request).filter(\.id, in: categories.detach ?? []).all()
         let category = try request.parameter(Category.self)
         return Async.flatMap(to: Category.self, category, attach, detach) { (category, attach, detach) in
             let detached = detach.map({ category.subCategories.detach($0, on: request) }).flatten()

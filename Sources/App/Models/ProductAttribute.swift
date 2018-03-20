@@ -22,15 +22,3 @@ final class ProductAttribute: MySQLPivot, Migration {
         self.attributeId = attributeId
     }
 }
-
-extension Product {
-    var attributes: Siblings<Product, Attribute, ProductAttribute> {
-        return self.siblings()
-    }
-}
-
-extension Attribute {
-    var products: Siblings<Attribute, Product, ProductAttribute> {
-        return self.siblings()
-    }
-}

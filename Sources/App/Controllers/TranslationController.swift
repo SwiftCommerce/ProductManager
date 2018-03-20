@@ -78,9 +78,9 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
         return translation.flatMap(to: Void.self) { (translation) in
             var deletions: [Future<Void>] = []
             
-            if let productTranslartion = translation as? ProductTranslation {
-                deletions.append(productTranslartion.prodcuts.deleteConnections(on: request))
-                if let price = productTranslartion.priceId {
+            if let productTranslation = translation as? ProductTranslation {
+                deletions.append(productTranslation.products.deleteConnections(on: request))
+                if let price = productTranslation.priceId {
                     deletions.append(Price.query(on: request).filter(\.id == price).delete())
                 }
             } else if let categoryTranslation = translation as? CategoryTranslation {

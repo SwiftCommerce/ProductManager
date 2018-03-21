@@ -1,3 +1,4 @@
+/// A pivot connecting a `Category` model to its sub-categories.
 final class CategoryPivot: MySQLPivot {
     typealias Left = Category
     typealias Right = Category
@@ -10,21 +11,20 @@ final class CategoryPivot: MySQLPivot {
     var right: Int
     var left: Int
     
+    /// Create a pivot between two `Category` models.
     init(_ leftCategory: Category, _ rightCategory: Category)throws {
+        
+        // Verify the left `category` model has been saved to the database (by checking for an ID).
         guard let left = leftCategory.id else {
             fatalError("FIXME: Use a `FluentError`")
         }
+        
+        // Verify the right `category` model has been saved to the database.
         guard let right = rightCategory.id else {
             fatalError("FIXME: Use a `FluentError`")
         }
         
         self.right = right
         self.left = left
-    }
-}
-
-extension Category {
-    var subCategories: Siblings<Category, Category, CategoryPivot> {
-        return self.siblings(related: Category.self, through: CategoryPivot.self, CategoryPivot.leftIDKey, CategoryPivot.rightIDKey)
     }
 }

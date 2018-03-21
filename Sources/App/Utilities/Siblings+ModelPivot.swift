@@ -26,6 +26,15 @@ extension Product {
     }
 }
 
+extension Category {
+    
+    /// Gets the categories connected to the current `Category` model.
+    var subCategories: Siblings<Category, Category, CategoryPivot> {
+        return self.siblings(related: Category.self, through: CategoryPivot.self, CategoryPivot.leftIDKey, CategoryPivot.rightIDKey)
+    }
+}
+
+
 // MARK: - Translation Pivots
 
 extension Product: TranslationParent {

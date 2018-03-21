@@ -1,6 +1,6 @@
 import Async
 
-/// A controller for all API endpoints that make operations on a products attributes.
+/// A controller for all API endpoints that make operations on a product's attributes.
 final class AttributesController: RouteCollection {
     
     /// Required by the `RouteCollection` protocol.

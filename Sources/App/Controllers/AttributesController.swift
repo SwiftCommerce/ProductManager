@@ -1,5 +1,3 @@
-import Async
-
 /// A controller for all API endpoints that make operations on a product's attributes.
 final class AttributesController: RouteCollection {
     

@@ -1,5 +1,3 @@
-import FluentMySQL
-
 /// A static type declaration of `ModelTranslation` with `Parent` and `ParentTransltion` models.
 typealias ProductTranslationPivot = ModelTranslation<Product, ProductTranslation>
 

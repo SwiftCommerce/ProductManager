@@ -1,5 +1,3 @@
-import CodableKit
-
 extension QueryBuilder {
     
     /// Sets the value of the column on all the models matching the current query.

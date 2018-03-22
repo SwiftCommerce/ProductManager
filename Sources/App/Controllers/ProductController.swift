@@ -1,5 +1,3 @@
-import Vapor
-
 // MARK: - Request Body Type
 
 /// A decoded request body used to

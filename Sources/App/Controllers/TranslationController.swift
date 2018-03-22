@@ -1,5 +1,3 @@
-import Vapor
-
 struct TranslationUpdateBody: Content {
     let languageCode: String?
     let description: String?

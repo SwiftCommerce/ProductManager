@@ -120,14 +120,14 @@ final class ProductController: RouteCollection {
         let product = try request.parameter(Product.self)
         
         // Get all models that have an ID in any if the request bodies' arrays.
-        let detachAttributes = Attribute.query(on: request).filter(\.name, in: body.attributes?.detach)
-        let attachAttributes = Attribute.query(on: request).filter(\.name, in: body.attributes?.attach)
+        let detachAttributes = Attribute.query(on: request).all(where: \.name, in: body.attributes?.detach)
+        let attachAttributes = Attribute.query(on: request).all(where: \.name, in: body.attributes?.attach)
         
-        let detachTranslations = ProductTranslation.query(on: request).filter(\.name, in: body.translations?.detach)
-        let attachTranslations = ProductTranslation.query(on: request).filter(\.name, in: body.translations?.attach)
+        let detachTranslations = ProductTranslation.query(on: request).all(where: \.name, in: body.translations?.detach)
+        let attachTranslations = ProductTranslation.query(on: request).all(where: \.name, in: body.translations?.attach)
         
-        let detachCategories = Category.query(on: request).filter(\.id, in: body.categories?.detach)
-        let attachCategories = Category.query(on: request).filter(\.id, in: body.categories?.attach)
+        let detachCategories = Category.query(on: request).all(where: \.id, in: body.categories?.detach)
+        let attachCategories = Category.query(on: request).all(where: \.id, in: body.categories?.attach)
         
         // Attach and detach the models fetched with the ID arrays.
         // This means we either create or delete a row in a pivot table.

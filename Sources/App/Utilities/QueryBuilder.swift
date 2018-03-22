@@ -29,7 +29,7 @@ extension QueryBuilder {
     ///   - values: The values to check for in the columns.
     /// - Returns: All the models that match the given query, wrapped in a future.
     @discardableResult
-    public func filter<T>(_ field: KeyPath<Model, T>, in values: [Encodable]?) -> Future<[Model]> where T: KeyStringDecodable {
+    public func all<T>(where field: KeyPath<Model, T>, in values: [Encodable]?) -> Future<[Model]> where T: KeyStringDecodable {
         // This method is different because we allow `nil` to be passed in instead of an array.
         // If we get `nil` instead of an array, return an empty array immediately, it saves time.
         guard let values = values else {

@@ -1,54 +1,125 @@
 import Vapor
 
+// MARK: - Request Body Type
+
+/// A decoded request body used to
+/// update a `Product` models connections to other models.
 struct ProductUpdateBody: Content {
+    
+    /// A wrapper type, allowing the request's body to have a nested strcuture:
+    ///
+    ///     {
+    ///       "attributes": {"attach": [], "detach": []}
+    ///     }
     struct AttributeUpdate: Content {
+        
+        /// The IDs of the attributes to attach (create pivots) to the prodcut.
         let attach: [Attribute.ID]?
+        
+        /// The IDs of the attributes to detach (delete pivots) from the prodcut.
         let detach: [Attribute.ID]?
     }
+    
+    /// A wrapper type, allowing the request's body to have a nested strcuture:
+    ///
+    ///     {
+    ///       "translations": {"attach": [], "detach": []}
+    ///     }
     struct TranslationUpdate: Content {
+        
+        /// The IDs of the `ProdcurTranslations` models to attach (create pivots) to the prodcut
         let attach: [ProductTranslation.ID]?
+        
+        /// The IDs of the `ProdcutTranslation` models to detach (delete pivots) to the prodcut.
         let detach: [ProductTranslation.ID]?
     }
     
+    /// A decoded JSON object to get the IDs of `Attribute` models
+    /// to attach to and detach from the product.
     let attributes: AttributeUpdate?
+    
+    /// A decoded JSON object to get the IDs of `ProdcutTranslation` models
+    /// to attach to and detach from the product.
     let translations: TranslationUpdate?
+    
+    /// A decoded JSON object to get the IDs of `Category` models
+    /// to attach to and detach from the product.
     let categories: CategoryUpdateBody?
 }
 
+// MARK: - Controller
+
+/// A controller for API endpoints that make operations on the `prodcuts` database table.
 final class ProductController: RouteCollection {
+    
+    /// Required by the `RouteCollection` protocol.
+    /// Allows you to run this to add your routes to a router:
+    ///
+    ///     router.register(collection: ProductController())
+    ///
+    /// - parameter router: The router that the controller's routes will be registered to.
     func boot(router: Router) throws {
+        
+        // We create a route group because all the routes for this controller
+        // have the same parent path.
         let products = router.grouped("products")
         
+        // Registers a POST route at `/prodcuts` with the router.
         products.post(use: create)
         
+        // Registers a GET route at `/prodcuts` with the router.
         products.get(use: index)
+        
+        // Registers a GET route at `/prodcuts/:product` with the router.
         products.get(Product.parameter, use: show)
         
+        // Registers a PATCH route at `/prodcuts/:prodcut` with the router.
+        // This route automatically decodes the request's body to a `ProductUpdateBody` object.
         products.patch(ProductUpdateBody.self, at: Product.parameter, use: update)
         
+        // Registers a DELETE route at `/products/:product` with the router.
         products.delete(Product.parameter, use: delete)
     }
     
+    /// Creates a new `Prodcut` model from the request's body
+    /// and saves it to the database.
     func create(_ request: Request)throws -> Future<ProductResponseBody> {
+        
+        // Get the value of the `sku` key from the request's body.
         let sku = request.content.get(String.self, at: "sku")
+        
+        // Once we have the SKU, create a new `Prodcut` model, save ot to the database, and convert it to a `ProductResponseBody`.
         return sku.map(to: Product.self, { (sku) in return Product(sku: sku) }).save(on: request).response(with: request)
     }
     
+    /// Get all the prodcuts from the database.
     func index(_ request: Request)throws -> Future<[ProductResponseBody]> {
+        
+        /// Run the query to fetch all the rows from the `products` database table.
         return Product.query(on: request).all().flatMap(to: [ProductResponseBody].self, { (products) in
+            
+            // Loop over all the prodcuts, converting them to a `ProductResponseBody` array.
             return products.map({ (product) in
-                return Future<ProductResponseBody>.init(product: product, executedWith: request)
+                return Future(product: product, executedWith: request)
             }).flatten()
         })
     }
     
+    /// Get the `Product` model from the database with a given ID.
     func show(_ request: Request)throws -> Future<ProductResponseBody> {
+        
+        // Get the specified model from the route's paramaters
+        // and convert it to a `ProductResponseBody`
         return try request.parameter(Product.self).response(with: request)
     }
     
+    /// Updates to pivots that connect a `Product` model to other models.
     func update(_ request: Request, _ body: ProductUpdateBody)throws -> Future<ProductResponseBody> {
+        
+        // Get the model to update from the request's route parameters.
         let product = try request.parameter(Product.self)
         
+        // Get all models that have an ID in any if the request bodies' arrays.
         let detachAttributes = Attribute.query(on: request).filter(\.name, in: body.attributes?.detach)
         let attachAttributes = Attribute.query(on: request).filter(\.name, in: body.attributes?.attach)
         
@@ -58,9 +129,14 @@ final class ProductController: RouteCollection {
         let detachCategories = Category.query(on: request).filter(\.id, in: body.categories?.detach)
         let attachCategories = Category.query(on: request).filter(\.id, in: body.categories?.attach)
         
+        // Attach and detach the models fetched with the ID arrays.
+        // This means we either create or delete a row in a pivot table.
         let attributes = Async.flatMap(to: Void.self, product, detachAttributes, attachAttributes) { (product, detach, attach) in
             let detached = detach.map({ product.attributes.detach($0, on: request) }).flatten()
             let attached = try attach.map({ try ProductAttribute(product: product, attribute: $0).save(on: request) }).flatten().transform(to: ())
+            
+            // This syntax allows you to complete the current future
+            // when both of the futures in the array are complete.
             return [detached, attached].flatten()
         }
         
@@ -76,12 +152,17 @@ final class ProductController: RouteCollection {
             return [detached, attached].flatten()
         }
         
+        // Once all the attaching/detaching is complete, convert the updated model to a `ProductResponseBody` and return it.
         return Async.flatMap(to: ProductResponseBody.self, attributes, translations, categories, { _, _, _ in
             return product.response(with: request)
         })
     }
     
+    // Deletes a `Product` model from that database and returns an HTTP status.
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
+        
+        // Get the model from the route paramaters,
+        // delete it from the database, and return HTTP status 204 (No Content).
         return try request.parameter(Product.self).delete(on: request).transform(to: .noContent)
     }
 }

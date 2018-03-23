@@ -72,6 +72,9 @@ final class ProductController: RouteCollection {
         // Registers a GET route at `/prodcuts/:product` with the router.
         products.get(Product.parameter, use: show)
         
+        // Registers a GET route at `/products/categorized` with the router.
+        products.get("categorized", use: categorized)
+        
         // Registers a PATCH route at `/prodcuts/:prodcut` with the router.
         // This route automatically decodes the request's body to a `ProductUpdateBody` object.
         products.patch(ProductUpdateBody.self, at: Product.parameter, use: update)
@@ -107,6 +110,30 @@ final class ProductController: RouteCollection {
         // Get the specified model from the route's paramaters
         // and convert it to a `ProductResponseBody`
         return try request.parameter(Product.self).response(on: request)
+    }
+    
+    /// Get all the `Product` models connected to specified categories.
+    func categorized(_ request: Request)throws -> Future<[ProductResponseBody]> {
+        
+        // Get the category IDs from the request query and get all the `Category` models with the IDs.
+        let categoryIDs = try request.query.get([Category.ID].self, at: "category_ids")
+        let futureCategories = try Category.query(on: request).filter(\.id, in: categoryIDs).all()
+        
+        
+        return futureCategories.flatMap(to: [[Product]].self) { (categories) in
+            
+            // Get all the `Product` models that are connected to the categories.
+            try categories.map({ (category) in
+                return try category.products.query(on: request).all()
+            }).flatten(on: request)
+            
+        // Flatten the 2D array to products to a 1D array.
+        }.map(to: [Product].self) { $0.flatMap({ $0 }) }
+            
+        // Convert each prodcut to a `ProductResponseBody` object.
+        .loop(to: ProductResponseBody.self) { (product) in
+            return Promise(product: product, on: request).futureResult
+        }
     }
     
     /// Updates to pivots that connect a `Product` model to other models.

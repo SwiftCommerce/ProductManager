@@ -84,11 +84,11 @@ final class AttributesController: RouteCollection {
         // Return the result of the `flatMap` completion handler, which is fired after the two futures passed in have complete.
         return flatMap(to: Product.self, product, newValue, { (product, newValue) in
             
-            // Find the attribute connected to the product with the ID passed in, update its `value` property, and return it.
-            //return try product.attributes.query(on: request)
-            //.filter(\Attribute.id == id).update(\Attribute.value, to: newValue).transform(to: product)
-            return Future.map(on: request, { Product(sku: "", status: .draft) })
+            // Find the attribute connected to the product with the ID passed in, update its `value` property, and return the product.
+            return try product.attributes.query(on: request).filter(\Attribute.id == id).update(\Attribute.value, to: newValue).transform(to: product)
         }).flatMap(to: Attribute.self, { product in
+            
+            // `QueryBuilder.update` returns `Future<Void>`, so to get the updated attribute, we need to run another query.
             return try product.attributes.query(on: request).filter(\Attribute.id == id).first().unwrap(or: Abort(.notFound, reason: ""))
         })
     }

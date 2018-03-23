@@ -47,7 +47,7 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
         }).flatMap(to: [TranslationResponseBody].self, { (tranlations) in
             
             // Loop over all translations, converting each one to a `TranslationResponseBody`.
-            return tranlations.map({ $0.response(on: request) }).flatten()
+            return tranlations.map({ $0.response(on: request) }).flatten(on: request)
         })
     }
     
@@ -61,7 +61,7 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
         let translation = request.content.get(String.self, at: "translation_name").flatMap(to: Translation.self) { (name) in
             
             // Get the `Translation` model with the name from the request body.
-            return Translation.find(name, on: request).unwrap(or: Abort(.badRequest, reason: "No translation found with name '\(name)'"))
+            return try Translation.find(name, on: request).unwrap(or: Abort(.badRequest, reason: "No translation found with name '\(name)'"))
         }
         
         return flatMap(to: TranslationResponseBody.self, parent, translation) { (parent, translation) in

@@ -14,13 +14,13 @@ final class Category: Content, MySQLModel, Migration, Parameter {
     ///
     /// - parameter executor: The object used to run the query for getting the translations.
     /// - returns: All the translations that are connected to the category through pivot models.
-    func translations(with executor: DatabaseConnectable) -> Future<[CategoryTranslation]> {
+    func translations(with request: Request) -> Future<[CategoryTranslation]> {
         
         // Verfiy the model has an ID.
-        return self.assertID().flatMap(to: [CategoryTranslation].self, { (id) in
+        return self.assertID(on: request).flatMap(to: [CategoryTranslation].self, { (id) in
             
             // Fetch and return connected translations.
-            return try self.translations.query(on: executor).all()
+            return try self.translations.query(on: request).all()
         })
     }
 }
@@ -43,39 +43,59 @@ struct CategoryResponseBody: Content {
     let translations: [TranslationResponseBody]
 }
 
-/// Extend `Future` if it wrapps a `CategoryResponseBody`.
-extension Future where T == CategoryResponseBody {
+/// Extend `Promise` if it wraps a `CategoryResponseBody`.
+extension Promise where T == CategoryResponseBody {
     
     /// Creates a `CategoryResponseBody` from a `Category`.
-    /// The result is wrapped in a future because we run database queries in the `init`.
+    /// The result is wrapped in a promise because we run database queries in the `init`.
     ///
     /// - parameters:
     ///   - category: The category model to get the information to populate the struct with.
     ///   - executor: The object to use to run the queries that will fetch the models connected to the category.
-    /// - returns: A `CategoryResponseBody` populated with data from the category passed in, wrapped in a `Future`.
-    init(category: Category, executedWith executor: DatabaseConnectable) {
+    /// - returns: A `CategoryResponseBody` populated with data from the category passed in, wrapped in a `Promise`.
+    init(category: Category, on request: Request) {
         
-        /// Wrap the body of the method in a flat map to remove the need for the method to throw.
-        self = Future.flatMap({
+        // Create a new promise from the request's event loop.
+        // We don't assign to self yet because we can't call `.succeed` on `self`.
+        let result = request.eventLoop.newPromise(CategoryResponseBody.self)
+        
+        // Wrap the body of the method in a do/catch to remove the need for the method to throw.
+        do {
             
-            /// Get all the sub-categories connected to the category passed in.
-            let categories = try category.subCategories.query(on: executor).all().flatMap(to: [CategoryResponseBody].self) { (categories) in
+            // Get all the sub-categories connected to the category passed in.
+            let categories = try category.subCategories.query(on: request).all().flatMap(to: [CategoryResponseBody].self) { (categories) in
                 
-                /// Convert the sub-categories to `CategoryResponseBody`s.
-                return categories.map({ Future(category: $0, executedWith: executor) }).flatten()
+                // Convert the sub-categories to `CategoryResponseBody`s.
+                return categories.map({ Promise(category: $0, on: request).futureResult }).flatten(on: request)
             }
             
-            /// Get the sub-categories and translations, convert them to a `CategoryResponseBody`, and assign self.
-            return Async.map(to: CategoryResponseBody.self, categories, category.translations(with: executor)) { (subCategories, translations) in
+            // Get the sub-categories and translations, convert them to a `CategoryResponseBody`, and assign self.
+            Async.map(to: CategoryResponseBody.self, categories, category.translations(with: request)) { (subCategories, translations) in
                 
-                /// Actually create the `CategoryResponseBody` with the data passed in.
+                // Actually create the `CategoryResponseBody` with the data passed in.
                 return CategoryResponseBody(
                     id: category.id,
                     name: category.name,
                     subcategories: subCategories,
                     translations: translations.map({ TranslationResponseBody($0, price: nil) })
                 )
+            }.do { (body) in
+                
+                // `CategoryResponseBody` creation succeded.
+                // Succeed the promise with the new value.
+                result.succeed(result: body)
+            }.catch { (error) in
+                
+                // An error occured somewhere. Fail the promise.
+                result.fail(error: error)
             }
-        })
+        } catch {
+            
+            // An error occured while getting the categories sub-categories.
+            // Fail the promise.
+            result.fail(error: error)
+        }
+        
+        self = result
     }
 }

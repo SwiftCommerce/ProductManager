@@ -34,15 +34,16 @@ extension Translation {
     ///
     /// - Parameter executor: The object used to get models connected to the current translation.
     /// - Returns: A `TranslationResponseBody`, wrapped in a future.
-    func response(on executor: DatabaseConnectable) -> Future<TranslationResponseBody> {
+    func response(on request: Request) -> Future<TranslationResponseBody> {
         /// Get the price connected to the current translation if it is a `ProductTranslation`.
         /// Otherwise, set it to `nil`
-        let price: Future<Price?>
-        if let productTranslation = self as? ProductTranslation, let id = productTranslation.priceId {
-            price = Price.find(id, on: executor)
-        } else {
-            price = Future(nil)
-        }
+        let price: Future<Price?> = Future.flatMap(on: request, {
+            if let productTranslation = self as? ProductTranslation, let id = productTranslation.priceId {
+                return try Price.find(id, on: request)
+            } else {
+                return Future.map(on: request, { nil })
+            }
+        })
         
         /// Create a new `ProductTranslation` with the fetched `Price` model and the current translation model.
         return price.map(to: TranslationResponseBody.self, { (price) in
@@ -88,7 +89,7 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
     static func create(from content: TranslationRequestContent, with request: Request) -> Future<TranslationResponseBody> {
         // Verify that a `price` value was passed into the request body.
         guard let amount = content.price else {
-            return Future(error: Abort(.badRequest, reason: "Request body must contain 'price' key"))
+            return Future.map(on: request, { throw Abort(.badRequest, reason: "Request body must contain 'price' key") })
         }
         
         // Create a new `Price` model.

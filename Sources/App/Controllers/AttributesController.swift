@@ -1,3 +1,5 @@
+import Vapor
+
 /// A controller for all API endpoints that make operations on a product's attributes.
 final class AttributesController: RouteCollection {
     
@@ -34,7 +36,7 @@ final class AttributesController: RouteCollection {
     func create(_ request: Request, _ attribute: Attribute)throws -> Future<Attribute> {
         
         // Get the amount of attributes that already exist in the database with the name of the new attribute.
-        return Attribute.query(on: request).filter(\.name == attribute.name).count().flatMap(to: Attribute.self) { (attributeCount) in
+        return try Attribute.query(on: request).filter(\.name == attribute.name).count().flatMap(to: Attribute.self) { (attributeCount) in
             
             // Verify that there are less then one (0 or fewer) attributes already in the database with the name passed in.
             guard attributeCount < 1 else {
@@ -73,17 +75,21 @@ final class AttributesController: RouteCollection {
         // Get the specified `Product` model from the request's route parameters.
         let product = try request.parameter(Product.self)
         
+        // Get the ID of the attribute to update.
+        let id = try request.parameter(Int.self)
+        
         // Get the new value fore the for the `Attribute` model.
         let newValue = request.content.get(String.self, at: "value")
         
         // Return the result of the `flatMap` completion handler, which is fired after the two futures passed in have complete.
-        return flatMap(to: Attribute.self, product, newValue, { (product, newValue) in
-            
-            // Get the ID of the attribute to update.
-            let id = try request.parameter(Int.self)
+        return flatMap(to: Product.self, product, newValue, { (product, newValue) in
             
             // Find the attribute connected to the product with the ID passed in, update its `value` property, and return it.
-            return try product.attributes.query(on: request).filter(\.id == id).set(\.value, to: newValue)
+            //return try product.attributes.query(on: request)
+            //.filter(\Attribute.id == id).update(\Attribute.value, to: newValue).transform(to: product)
+            return Future.map(on: request, { Product(sku: "") })
+        }).flatMap(to: Attribute.self, { product in
+            return try product.attributes.query(on: request).filter(\Attribute.id == id).first().unwrap(or: Abort(.notFound, reason: ""))
         })
     }
     

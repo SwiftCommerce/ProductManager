@@ -8,9 +8,9 @@ extension Future where T == Category {
     ///
     /// - Parameter executor: An object that can be used to query a model's table.
     /// - Returns: A future wrapping the public representation of the wrapped object.
-    func response(with executor: DatabaseConnectable) -> Future<CategoryResponseBody> {
+    func response(on request: Request) -> Future<CategoryResponseBody> {
         return self.flatMap(to: CategoryResponseBody.self, { this in
-            return Future<CategoryResponseBody>(category: this, executedWith: executor)
+            return Promise<CategoryResponseBody>(category: this, on: request).futureResult
         })
     }
 }
@@ -22,9 +22,9 @@ extension Future where T == Product {
     ///
     /// - Parameter executor: An object that can be used to query a model's table.
     /// - Returns: A future wrapping the public representation of the wrapped object.
-    func response(with executor: DatabaseConnectable) -> Future<ProductResponseBody> {
+    func response(on request: Request) -> Future<ProductResponseBody> {
         return self.flatMap(to: ProductResponseBody.self, { this in
-            return Future<ProductResponseBody>(product: this, executedWith: executor)
+            return Promise<ProductResponseBody>(product: this, on: request).futureResult
         })
     }
 }
@@ -36,9 +36,9 @@ extension Future where T: Translation {
     ///
     /// - Parameter executor: An object that can be used to query a model's table.
     /// - Returns: A future wrapping the public representation of the wrapped object.
-    func response(on executor: DatabaseConnectable) -> Future<TranslationResponseBody> {
+    func response(on request: Request) -> Future<TranslationResponseBody> {
         return self.flatMap(to: TranslationResponseBody.self, { (this) in
-            return this.response(on: executor)
+            return this.response(on: request)
         })
     }
 }

@@ -32,13 +32,13 @@ final class ProductCategory: MySQLPivot, Migration {
 extension Siblings where Base.Database: QuerySupporting, Base.ID: KeyStringDecodable {
     
     /// Delets all pivot rows connecting `Base` model to any `Related` models.
-    func deleteConnections(on executor: DatabaseConnectable) -> Future<Void> {
+    func deleteConnections(on request: Request) -> Future<Void> {
         
         // Wrap the query in a `flatMap` so the `deleteConnections` method doesn't throw.
-        return Future.flatMap {
+        return Future.flatMap(on: request) {
             
             // Run `DELETE` query on all pivot rows that have the `Base` model's ID.
-            return try Through.query(on: executor).filter(self.basePivotField == self.base.requireID()).delete()
+            return try Through.query(on: request).filter(self.basePivotField == self.base.requireID()).delete()
         }
     }
 }

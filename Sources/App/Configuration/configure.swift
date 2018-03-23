@@ -30,7 +30,8 @@ public func configure(
     // Configure a MySQL database.
     var databases = DatabaseConfig()
     let databaseName = "product_manager"
-    databases.add(database: MySQLDatabase(hostname: "localhost", user: "root", password: nil, database: databaseName), as: .mysql)
+    let config = MySQLDatabaseConfig.root(database: databaseName)
+    databases.add(database: MySQLDatabase(config: config), as: .mysql)
 
     // Configure migrations.
     // Add all models to the migration config so the `FluentProvider` will create tables for them in the database.

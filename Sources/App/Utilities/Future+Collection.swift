@@ -9,7 +9,7 @@ extension Future where T: Collection {
     /// - Returns: An array of the results of the `transform` method passed in, wrapped in a future.
     func loop<R>(to: R.Type, transform: @escaping (T.Element)throws -> Future<R>) -> Future<[R]> {
         return self.flatMap(to: [R].self, { (sequence) in
-            return try sequence.map(transform).flatten()
+            return try sequence.map(transform).flatten(on: self.eventLoop)
         })
     }
 }

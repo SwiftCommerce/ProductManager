@@ -52,7 +52,7 @@ final class TranslationController: RouteCollection {
             }
             
             // Get the `Price` model with the ID from the translation.
-            return Price.query(on: request).filter(\.id == price).first().unwrap(or: Abort(.internalServerError, reason: "Bad price ID connected to translation"))
+            return try Price.query(on: request).filter(\.id == price).first().unwrap(or: Abort(.internalServerError, reason: "Bad price ID connected to translation"))
         }).flatMap(to: Price.self, { (price) in
             
             // Updated the `Prioce` model's data and return the object.
@@ -68,16 +68,14 @@ final class TranslationController: RouteCollection {
 final class ModelTranslationController<Translation, Parent>: RouteCollection where Translation: App.Translation & TranslationRequestInitializable, Parent: MySQLModel {
     
     /// The top level path for all the controller's routes.
-    let root: PathComponent
+    let root: String
     
     /// Creates a `ModelTranslationController` instance with a top level path.
     ///
     /// - parameter root: The top level path for all the controller's routes.
     init(root: String) {
         
-        // We take in a `String`, but we need a `PathComponent`,
-        // so we convert it to the proper type through the enum cases.
-        self.root = .constants([.string(root)])
+        self.root = root
     }
     
     /// Required by the `RouteCollection` protocol.
@@ -171,7 +169,7 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
             if let productTranslation = translation as? ProductTranslation {
                 deletions.append(productTranslation.products.deleteConnections(on: request))
                 if let price = productTranslation.priceId {
-                    deletions.append(Price.query(on: request).filter(\.id == price).delete())
+                    try deletions.append(Price.query(on: request).filter(\.id == price).delete())
                 }
             } else if let categoryTranslation = translation as? CategoryTranslation {
                 deletions.append(categoryTranslation.categories.deleteConnections(on: request))
@@ -180,7 +178,7 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
             }
             
             // Once the connection deletions have complete, return the `Translation` model.
-            return deletions.flatten().transform(to: translation)
+            return deletions.flatten(on: request).transform(to: translation)
         }.flatMap(to: HTTPStatus.self, { translation in
             
             // Delete the model and return HTTP status 204 (No Content).

@@ -1,24 +1,7 @@
+import Fluent
+import CodableKit
+
 extension QueryBuilder {
-    
-    /// Sets the value of the column on all the models matching the current query.
-    ///
-    /// - Parameters:
-    ///   - key: The colunm to change the value of.
-    ///   - value: The new value for the column.
-    /// - Returns: The first model that was mutated (specific use for this service).
-    func set<Value>(_ key: KeyPath<Model, Value>, to value: Value) -> Future<Model> where Value: Encodable & KeyStringDecodable {
-        // Set the data for the query.
-        // `UPDATE * SET key = value ...`
-        self.query.data = [
-            key.makeQueryField().name: value
-        ]
-        
-        // Set the queries action to `UPDATE` (vs `SELECT`, etc.).
-        self.query.action = .update
-        
-        // Run the query, get the first model and unwrap it.
-        return self.first().unwrap(or: Abort(.notFound, reason: "No \(Model.entity) model found with given query"))
-    }
     
     /// Gets all models from a table that have any one of a list of values in a specefied column.
     ///
@@ -27,23 +10,21 @@ extension QueryBuilder {
     ///   - values: The values to check for in the columns.
     /// - Returns: All the models that match the given query, wrapped in a future.
     @discardableResult
-    public func all<T>(where field: KeyPath<Model, T>, in values: [Encodable]?) -> Future<[Model]> where T: KeyStringDecodable {
+    public func all<T>(where field: KeyPath<Model, T>, in values: [Model.Database.QueryDataConvertible]?) -> Future<[Result]> where T: KeyStringDecodable {
+        
         // This method is different because we allow `nil` to be passed in instead of an array.
         // If we get `nil` instead of an array, return an empty array immediately, it saves time.
         guard let values = values else {
-            return Future([])
+            let emptyResult = self.connection.eventLoop.newPromise([Result].self)
+            emptyResult.succeed(result: [])
+            return emptyResult.futureResult
         }
         
-        // Create a new filter to add to the query for the model's table, and the colunm and values passed in.
-        let filter = QueryFilter<Model.Database>(
-            entity: Model.entity,
-            method: .subset(field.makeQueryField(), .in, .array(values))
-        )
-        
-        // Add the filter to the query.
-        self.addFilter(filter)
-        
-        // Run the query and return all the resulting models.
-        return self.all()
+        // Wrap filter in `flatMap` so the method doesn't have to throw.
+        return Future.flatMap(on: self.connection.eventLoop) { () -> EventLoopFuture<[Result]> in
+            
+            // Since `value` is not `nil`, run the filter and get all the resulting models.
+            return try self.filter(field, in: values).all()
+        }
     }
 }

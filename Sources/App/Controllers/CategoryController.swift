@@ -46,7 +46,7 @@ final class CategoryController: RouteCollection {
         let name = request.content.get(String.self, at: "name")
         
         // Create a new category with the name from the request, save the category to the database, and convert it to a `CategoryResponseBody`.
-        return name.map(to: Category.self, { Category(name: $0) }).save(on: request).response(with: request)
+        return name.map(to: Category.self, { Category(name: $0) }).save(on: request).response(on: request)
     }
     
     /// Get all `Category` models from the database.
@@ -56,7 +56,7 @@ final class CategoryController: RouteCollection {
         return Category.query(on: request).all().flatMap(to: [CategoryResponseBody].self, { (categories) in
             
             // Convert all categories to `CategoryResponseBody`s and return them.
-            categories.map({ Future(category: $0, executedWith: request) }).flatten()
+            categories.map({ Promise(category: $0, on: request).futureResult }).flatten(on: request)
         })
     }
     
@@ -64,7 +64,7 @@ final class CategoryController: RouteCollection {
     func show(_ request: Request)throws -> Future<CategoryResponseBody> {
         
         /// Get the `Category` model passed into the request's route parameters and convert it to a `CategoryResponseBody`.
-        return try request.parameter(Category.self).response(with: request)
+        return try request.parameter(Category.self).response(on: request)
     }
    
     /// Updates the sub-categories of a given `Category` model.
@@ -81,15 +81,15 @@ final class CategoryController: RouteCollection {
         return Async.flatMap(to: Category.self, category, attach, detach) { (category, attach, detach) in
             
             // Detach all categories from parent category id `detach` array.
-            let detached = detach.map({ category.subCategories.detach($0, on: request) }).flatten()
+            let detached = detach.map({ category.subCategories.detach($0, on: request) }).flatten(on: request)
             
             // Attach all categories to parent category with an ID in the `attach` array.
             // We don't use `categories.subCategories.attach` because we gett weird compiler errors when we do.
-            let attached = try attach.map({ try CategoryPivot(category, $0).save(on: request) }).flatten().transform(to: ())
+            let attached = try attach.map({ try CategoryPivot(category, $0).save(on: request) }).flatten(on: request).transform(to: ())
             
             // Once attaching and detaching are complete, return the category that we updated.
-            return [detached, attached].flatten().transform(to: category)
-        }.response(with: request)
+            return [detached, attached].flatten(on: request).transform(to: category)
+        }.response(on: request)
     }
     
     /// Deletes a category from the database, along with its connections to other categories and products.
@@ -104,7 +104,7 @@ final class CategoryController: RouteCollection {
             
             // Once the connections to sud-catefories have been updated,
             // return the category from the parameter
-            return [detachCategories, detachProducts].flatten().transform(to: category)
+            return [detachCategories, detachProducts].flatten(on: request).transform(to: category)
         }).flatMap(to: HTTPStatus.self, { (cateogory) in
             
             // All the connections are deleted, so now it is safe to delete the parent category from the database.

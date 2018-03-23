@@ -63,7 +63,8 @@ final class ProductController: RouteCollection {
         let products = router.grouped("products")
         
         // Registers a POST route at `/prodcuts` with the router.
-        products.post(use: create)
+        // This route automatically decodes the request's body to a `Prodcut` object.
+        products.post(Product.self, use: create)
         
         // Registers a GET route at `/prodcuts` with the router.
         products.get(use: index)
@@ -81,13 +82,10 @@ final class ProductController: RouteCollection {
     
     /// Creates a new `Prodcut` model from the request's body
     /// and saves it to the database.
-    func create(_ request: Request)throws -> Future<ProductResponseBody> {
+    func create(_ request: Request, _ product: Product)throws -> Future<ProductResponseBody> {
         
-        // Get the value of the `sku` key from the request's body.
-        let sku = request.content.get(String.self, at: "sku")
-        
-        // Once we have the SKU, create a new `Prodcut` model, save ot to the database, and convert it to a `ProductResponseBody`.
-        return sku.map(to: Product.self, { (sku) in return Product(sku: sku) }).save(on: request).response(on: request)
+        // Save the `Product` model to the database and convert it to a `ProductResponseBody`.
+        return product.save(on: request).response(on: request)
     }
     
     /// Get all the prodcuts from the database.

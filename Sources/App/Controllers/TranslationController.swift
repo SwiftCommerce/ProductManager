@@ -22,11 +22,11 @@ final class TranslationController: RouteCollection {
     /// - parameter router: The router that the controller's routes will be registered to.
     func boot(router: Router) throws {
         
-        // Register the routes in the `ProductTranslationController` class at `/products/:product/translations`.
-        try router.grouped("products", Product.parameter, "translations").register(collection: ProductTranslationController())
+        // Register the routes in the `ProductTranslationController` class with a root path `products`.
+        try router.register(collection: ProductTranslationController(root: "products"))
         
-        // Register the routes in the `CategoryTranslationController` class at `/categories/:category/translations`.
-        try router.grouped("categories", Category.parameter, "translations").register(collection: CategoryTranslationController())
+        // Register the routes in the `CategoryTranslationController` class with a root path `categories`.
+        try router.register(collection: CategoryTranslationController(root: "categories"))
         
         // Register the routes in `ModelTranslationController<CategoryTranslation, Category>` with a root path of `categories`.
         try router.register(collection: ModelTranslationController<CategoryTranslation, Category>(root: "categories"))

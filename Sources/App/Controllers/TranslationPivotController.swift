@@ -17,6 +17,12 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
     /// The pivot type used to connect the `Parent` and `Translation` types.
     typealias Pivot = ModelTranslation<Parent, Translation>
     
+    /// The root path element of the router group for the controller instance.
+    let root: String
+    
+    ///
+    init(root: String) { self.root = root }
+    
     /// Required by the `RouteCollection` protocol.
     /// Allows you to run this to add your routes to a router:
     ///
@@ -24,15 +30,16 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
     ///
     /// - parameter router: The router that the controller's routes will be registered to.
     func boot(router: Router) throws {
+        let translations = router.grouped(self.root, Parent.parameter, "translations")
         
         // Registers a GET route at `/` with the router.
-        router.get(use: index)
+        translations.get(use: index)
         
         // Registers a POST route at `/` with the router.
-        router.post(use: add)
+        translations.post(use: add)
         
         // Registers a DELETE route at /:tranalation` with the router.
-        router.delete(Translation.parameter, use: remove)
+        translations.delete(Translation.parameter, use: remove)
     }
     
     /// Gets all `Translation` models connected to the `Parent` model.

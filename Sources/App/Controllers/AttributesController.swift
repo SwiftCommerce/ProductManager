@@ -87,7 +87,7 @@ final class AttributesController: RouteCollection {
             // Find the attribute connected to the product with the ID passed in, update its `value` property, and return it.
             //return try product.attributes.query(on: request)
             //.filter(\Attribute.id == id).update(\Attribute.value, to: newValue).transform(to: product)
-            return Future.map(on: request, { Product(sku: "") })
+            return Future.map(on: request, { Product(sku: "", status: .draft) })
         }).flatMap(to: Attribute.self, { product in
             return try product.attributes.query(on: request).filter(\Attribute.id == id).first().unwrap(or: Abort(.notFound, reason: ""))
         })

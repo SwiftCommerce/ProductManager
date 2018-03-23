@@ -12,8 +12,15 @@ final class Product: Content, MySQLModel, Migration, Parameter {
     /// The SKU (stock-keeping unit) of the tangible product this model represents.
     let sku: String
     
+    /// That current state of the product.
+    /// This could be `draft`, `published`, or one of other cases.
+    var status: ProductStatus
+    
     ///
-    init(sku: String) { self.sku = sku }
+    init(sku: String, status: ProductStatus) {
+        self.sku = sku
+        self.status = status
+    }
     
     /// Gets all the `ProductTranslation` models connected to the current `Product` model through `ProductTranslationPivot`s.
     ///

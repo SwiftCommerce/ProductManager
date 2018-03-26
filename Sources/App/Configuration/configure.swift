@@ -29,7 +29,9 @@ public func configure(
 
     // Configure a MySQL database.
     var databases = DatabaseConfig()
-    let databaseName = "product_manager"
+    guard let databaseName = Environment.get("database") else {
+        throw Abort.init(.failedDependency, reason: "Missing environment variable `database`.")
+    }
     let config = MySQLDatabaseConfig.root(database: databaseName)
     databases.add(database: MySQLDatabase(config: config), as: .mysql)
 

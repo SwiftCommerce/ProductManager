@@ -43,7 +43,7 @@ public func configure(
         hostname: Environment.get("DATABASE_HOSTNAME") ?? "localhost",
         port: 3306,
         username: Environment.get("DATABASE_USER") ?? "root",
-        password: Environment.get("DATABASE_PASSWORD"),
+        password: Environment.get("DATABASE_PASSWORD") ?? "password",
         database:  databaseName
     )
     databases.add(database: MySQLDatabase(config: config), as: .mysql)

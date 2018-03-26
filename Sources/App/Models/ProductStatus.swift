@@ -1,10 +1,12 @@
-enum ProductStatus: Int, Codable, KeyStringDecodable, MySQLDataConvertible {
+enum ProductStatus: Int, Codable, KeyStringDecodable, MySQLDataConvertible, MySQLColumnDefinitionStaticRepresentable {
     case draft
     case published
     case deactivated
     
     static var keyStringTrue: ProductStatus = .published
     static var keyStringFalse: ProductStatus = .deactivated
+    
+    static var mySQLColumnDefinition: MySQLColumnDefinition = .smallInt()
     
     func convertToMySQLData() throws -> MySQLData {
         return .init(integer: self.rawValue)

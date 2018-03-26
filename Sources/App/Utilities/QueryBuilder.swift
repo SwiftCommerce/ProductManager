@@ -28,3 +28,10 @@ extension QueryBuilder {
         }
     }
 }
+
+// TODO: - This extension is here until it is added to `FluentMySQL`.
+extension Bool: MySQLColumnDefinitionStaticRepresentable {
+    public static var mySQLColumnDefinition: MySQLColumnDefinition {
+        return .tinyInt()
+    }
+}

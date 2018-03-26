@@ -29,10 +29,23 @@ public func configure(
 
     // Configure a MySQL database.
     var databases = DatabaseConfig()
-    guard let databaseName = Environment.get("database") else {
+    
+    let databaseName: String
+    if let name = Environment.get("database") {
+        databaseName = name
+    } else if let name =  Environment.get("DATABASE_DB") {
+        databaseName = name
+    } else {
         throw Abort.init(.failedDependency, reason: "Missing environment variable `database`.")
     }
-    let config = MySQLDatabaseConfig.root(database: databaseName)
+    
+    let config = MySQLDatabaseConfig.init(
+        hostname: Environment.get("DATABASE_HOSTNAME") ?? "localhost",
+        port: 3306,
+        username: Environment.get("DATABASE_USER") ?? "root",
+        password: Environment.get("DATABASE_PASSWORD"),
+        database:  databaseName
+    )
     databases.add(database: MySQLDatabase(config: config), as: .mysql)
 
     // Configure migrations.

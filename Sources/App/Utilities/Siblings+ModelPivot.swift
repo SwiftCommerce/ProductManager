@@ -30,7 +30,7 @@ extension Category {
     
     /// Gets the categories connected to the current `Category` model.
     var subCategories: Siblings<Category, Category, CategoryPivot> {
-        return self.siblings(related: Category.self, through: CategoryPivot.self, CategoryPivot.leftIDKey, CategoryPivot.rightIDKey)
+        return self.siblings(related: Category.self, through: CategoryPivot.self, CategoryPivot.rightIDKey, CategoryPivot.leftIDKey)
     }
 }
 

@@ -33,3 +33,14 @@ extension Category {
         return self.siblings(related: Category.self, through: CategoryPivot.self, CategoryPivot.rightIDKey, CategoryPivot.leftIDKey)
     }
 }
+
+
+// MARK: - Translation Pivots
+
+extension Product: TranslationParent {
+    typealias Translation = ProductTranslation
+}
+
+extension Category: TranslationParent {
+    typealias Translation = CategoryTranslation
+}

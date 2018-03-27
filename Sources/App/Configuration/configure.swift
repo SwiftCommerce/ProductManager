@@ -60,8 +60,6 @@ public func configure(
     migrations.add(model: ProductAttribute.self, database: .mysql)
     migrations.add(model: ProductTranslation.self, database: .mysql)
     migrations.add(model: CategoryTranslation.self, database: .mysql)
-    migrations.add(model: ProductTranslationPivot.self, database: .mysql)
-    migrations.add(model: CategoryTranslationPivot.self, database: .mysql)
     
     // Register Database and Migration configurations with the application services.
     services.register(databases)

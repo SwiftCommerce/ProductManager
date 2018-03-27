@@ -18,27 +18,10 @@ struct ProductUpdateBody: Content {
         let detach: [Attribute.ID]?
     }
     
-    /// A wrapper type, allowing the request's body to have a nested strcuture:
-    ///
-    ///     {
-    ///       "translations": {"attach": [], "detach": []}
-    ///     }
-    struct TranslationUpdate: Content {
-        
-        /// The IDs of the `ProdcurTranslations` models to attach (create pivots) to the prodcut
-        let attach: [ProductTranslation.ID]?
-        
-        /// The IDs of the `ProdcutTranslation` models to detach (delete pivots) to the prodcut.
-        let detach: [ProductTranslation.ID]?
-    }
-    
     /// A decoded JSON object to get the IDs of `Attribute` models
     /// to attach to and detach from the product.
     let attributes: AttributeUpdate?
     
-    /// A decoded JSON object to get the IDs of `ProdcutTranslation` models
-    /// to attach to and detach from the product.
-    let translations: TranslationUpdate?
     
     /// A decoded JSON object to get the IDs of `Category` models
     /// to attach to and detach from the product.
@@ -146,9 +129,6 @@ final class ProductController: RouteCollection {
         let detachAttributes = Attribute.query(on: request).all(where: \.name, in: body.attributes?.detach)
         let attachAttributes = Attribute.query(on: request).all(where: \.name, in: body.attributes?.attach)
         
-        let detachTranslations = ProductTranslation.query(on: request).all(where: \.name, in: body.translations?.detach)
-        let attachTranslations = ProductTranslation.query(on: request).all(where: \.name, in: body.translations?.attach)
-        
         let detachCategories = Category.query(on: request).all(where: \.id, in: body.categories?.detach)
         let attachCategories = Category.query(on: request).all(where: \.id, in: body.categories?.attach)
         
@@ -163,11 +143,6 @@ final class ProductController: RouteCollection {
             return [detached, attached].flatten(on: request)
         }
         
-        let translations = Async.flatMap(to: Void.self, product, detachTranslations, attachTranslations) { (product, detach, attach) in
-            let detached = detach.map({ product.translations.detach($0, on: request) }).flatten(on: request)
-            let attached = try attach.map({ try ProductTranslationPivot(parent: product, translation: $0).save(on: request) }).flatten(on: request).transform(to: ())
-            return [detached, attached].flatten(on: request)
-        }
         
         let categories = Async.flatMap(to: Void.self, product, detachCategories, attachCategories) { (product, detach, attach) in
             let detached = detach.map({ product.categories.detach($0, on: request) }).flatten(on: request)
@@ -176,7 +151,7 @@ final class ProductController: RouteCollection {
         }
         
         // Once all the attaching/detaching is complete, convert the updated model to a `ProductResponseBody` and return it.
-        return Async.flatMap(to: ProductResponseBody.self, attributes, translations, categories, { _, _, _ in
+        return Async.flatMap(to: ProductResponseBody.self, attributes, categories, { _, _ in
             return product.response(on: request)
         })
     }

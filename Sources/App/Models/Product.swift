@@ -32,7 +32,7 @@ final class Product: Content, MySQLModel, Migration, Parameter {
         return self.assertID(on: request).flatMap(to: [ProductTranslation].self, { (id) in
             
             // Return all the `ProductTranslation`s connected to the current model through pivots.
-            return try self.translations.query(on: request).all()
+            return try self.translations(on: request).all()
         })
     }
     
@@ -62,18 +62,22 @@ final class Product: Content, MySQLModel, Migration, Parameter {
         // Verify the model has in ID, else return a completed void future.
         guard self.id != nil else { return Future.map(on: request, { () }) }
         
-        // Delete all connections to related models (categories, attributes, translations).
-        return Async.flatMap(
-            to: Void.self,
-            self.categories.deleteConnections(on: request),
-            self.attributes.deleteConnections(on: request),
-            self.translations.deleteConnections(on: request)
-        ) { _, _, _ in
+        // Wrap the deletion queries in a `flatMap` so the mehod doesn't have to throw.
+        return Future.flatMap(on: request, { () in
             
-            // Delete current product from database and return void,
-            // signaling the product has been succesfuly deleted.
-            return self.delete(on: request).transform(to: ())
-        }
+            // Delete all connections to related models (categories, attributes, translations).
+            return try Async.flatMap(
+                to: Void.self,
+                self.categories.deleteConnections(on: request),
+                self.attributes.deleteConnections(on: request),
+                self.translations(on: request).delete()
+            ) { _, _, _ in
+                
+                // Delete current product from database and return void,
+                // signaling the product has been succesfuly deleted.
+                return self.delete(on: request).transform(to: ())
+            }
+        })
     }
 }
 

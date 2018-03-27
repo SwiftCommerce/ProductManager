@@ -93,7 +93,7 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
     ///   - content: A `TranslationRequestContent`, created from a request's body.
     ///   - request: The request that the body when fetched from.
     /// - Returns: A `TranslationResponseBody`, wrapped in a future.
-    static func create(from content: TranslationRequestContent, with request: Request) -> Future<TranslationResponseBody> {
+    static func create(from content: TranslationRequestContent, with request: Request) -> Future<ProductTranslation> {
         // Verify that a `price` value was passed into the request body.
         guard let amount = content.price else {
             return Future.map(on: request, { throw Abort(.badRequest, reason: "Request body must contain 'price' key") })
@@ -103,7 +103,7 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
         let price = Price(price: amount, activeFrom: content.priceActiveFrom, activeTo: content.priceActiveTo, active: content.priceActive, translationName: content.name)
         
         // Save the price to the database, and return the result of the future's callback.
-        return price.save(on: request).flatMap(to: TranslationResponseBody.self) { (price) in
+        return price.save(on: request).flatMap(to: ProductTranslation.self) { (price) in
             
             // Create a new `ProductTranslation`, save it to the database, and convert it to a `TranslationResponseBody`.
             return try ProductTranslation(
@@ -112,7 +112,7 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
                 languageCode: content.languageCode,
                 priceId: price.requireID(), parentID:
                 content.parentID
-            ).save(on: request).response(on: request)
+            ).save(on: request)
         }
     }
 }
@@ -148,7 +148,7 @@ final class CategoryTranslation: Translation, TranslationRequestInitializable {
     ///   - content: A `TranslationRequestContent`, created from a request's body.
     ///   - request: The request that the body when fetched from.
     /// - Returns: A `TranslationResponseBody`, wrapped in a future.
-    static func create(from content: TranslationRequestContent, with request: Request) -> Future<TranslationResponseBody> {
+    static func create(from content: TranslationRequestContent, with request: Request) -> Future<CategoryTranslation> {
         
         // Create a `CategoryTranslation`, save it to the database, ans convert it to a `TranslationResponseBody`.
         return CategoryTranslation(
@@ -156,7 +156,7 @@ final class CategoryTranslation: Translation, TranslationRequestInitializable {
             description: content.description,
             languageCode: content.languageCode,
             parentID: content.parentID
-        ).save(on: request).response(on: request)
+        ).save(on: request)
     }
 }
 
@@ -167,7 +167,7 @@ final class CategoryTranslation: Translation, TranslationRequestInitializable {
 protocol TranslationRequestInitializable {
     
     ///
-    static func create(from content: TranslationRequestContent, with request: Request) -> Future<TranslationResponseBody>
+    static func create(from content: TranslationRequestContent, with request: Request) -> Future<Self>
 }
 
 /// A representation of a request body, used to create a translation type.

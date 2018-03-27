@@ -10,9 +10,13 @@ final class Attribute: Content, MySQLModel, Migration, Parameter {
     /// The value of the attribute, given by the user.
     var value: String
     
+    /// The ID of the `Product` model that owns the attribute.
+    let productID: Product.ID
+    
     ///
-    init(name: String, value: String) {
+    init(name: String, value: String, productID: Product.ID) {
         self.name = name
         self.value = value
+        self.productID = productID
     }
 }

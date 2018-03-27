@@ -77,14 +77,24 @@ final class ProductController: RouteCollection {
     /// Get all the prodcuts from the database.
     func index(_ request: Request)throws -> Future<[ProductResponseBody]> {
         
-        /// Run the query to fetch all the rows from the `products` database table.
-        return Product.query(on: request).all().flatMap(to: [ProductResponseBody].self, { (products) in
+        // If query parameters where passed in for pagination, limit the amount of models we fetch.
+        if let page = try request.query.get(Int?.self, at: "page"), let results = try request.query.get(Int?.self, at: "results_per_page") {
             
-            // Loop over all the prodcuts, converting them to a `ProductResponseBody` array.
-            return products.map({ (product) in
+            // Get all the models in the range specified by the query parameters passed in.
+            return Product.query(on: request).range(lower: (results * (page - 1)) + 1, upper: results * page).all().each(to: ProductResponseBody.self) { product in
+                
+                // For each product fetched from the database, create a `ProductResponseBody` from it.
                 return Promise(product: product, on: request).futureResult
-            }).flatten(on: request)
-        })
+            }
+        } else {
+            
+            // Run the query to fetch all the rows from the `products` database table.
+            return Product.query(on: request).all().each(to: ProductResponseBody.self) { product in
+                
+                // For each product fetched from the database, create a `ProductResponseBody` from it.
+                return Promise(product: product, on: request).futureResult
+            }
+        }
     }
     
     /// Get the `Product` model from the database with a given ID.

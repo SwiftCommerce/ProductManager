@@ -119,7 +119,7 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
     func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
         
         // Fetch all `Translation` models from the database.
-        return Translation.query(on: request).all().loop(to: TranslationResponseBody.self, transform: { (translation) in
+        return Translation.query(on: request).all().each(to: TranslationResponseBody.self, transform: { (translation) in
             
             // Iterate over each model and convert it to a `TranslationResponseBody`.
             return translation.response(on: request)

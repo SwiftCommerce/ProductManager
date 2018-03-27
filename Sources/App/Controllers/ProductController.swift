@@ -114,7 +114,7 @@ final class ProductController: RouteCollection {
         }.map(to: [Product].self) { $0.flatMap({ $0 }) }
             
         // Convert each prodcut to a `ProductResponseBody` object.
-        .loop(to: ProductResponseBody.self) { (product) in
+        .each(to: ProductResponseBody.self) { (product) in
             return Promise(product: product, on: request).futureResult
         }
     }

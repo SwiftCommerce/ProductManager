@@ -95,6 +95,9 @@ struct ProductResponseBody: Content {
     let sku: String
     
     ///
+    let status: ProductStatus
+    
+    ///
     let attributes: [Attribute]
     
     ///
@@ -135,7 +138,7 @@ extension Promise where T == ProductResponseBody {
             
             /// Once all the queries have complete, take the data, create a `ProductResponseBody` from the data, and return it.
             Async.map(to: ProductResponseBody.self, attributes, translations, categories, { (attributes, translations, categories) in
-                return ProductResponseBody(id: product.id, sku: product.sku, attributes: attributes, translations: translations, categories: categories)
+                return ProductResponseBody(id: product.id, sku: product.sku, status: product.status, attributes: attributes, translations: translations, categories: categories)
             }).do { (body) in
                 
                 // The `ProductResponseBody` was succesfuly created,

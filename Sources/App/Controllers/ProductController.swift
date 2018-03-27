@@ -77,11 +77,34 @@ final class ProductController: RouteCollection {
     /// Get all the prodcuts from the database.
     func index(_ request: Request)throws -> Future<[ProductResponseBody]> {
         
+        // Create a non-assigned `QueryBuilder` constant.
+        // This allows us to assign different queries depending on wheather the `filter` query string exists.
+        let query: QueryBuilder<Product, Product>
+        
+        // Try to got the `filter` query string from the request.
+        if let filters = try request.query.get([String: String]?.self, at: "filter") {
+            
+            // `filter` exists. Create a query that joins `Product` to `Attribute`, then add an `OR` clause.
+            query = try Product.query(on: request).join(field: \Attribute.productID).group(.or) { (query) in
+                
+                // For every filter, add another `OR` case to the query that gets `Product` models
+                // connected to attributes with both a given nams and value.
+                try filters.forEach({ (filter) in
+                    let (name, value) = filter
+                    try query.filter(Attribute.self, \.name == name).filter(Attribute.self, \.value == value)
+                })
+            }
+        } else {
+            
+            // `filter` doesn't exist. Create a generic query builder instance.
+            query = Product.query(on: request)
+        }
+        
         // If query parameters where passed in for pagination, limit the amount of models we fetch.
         if let page = try request.query.get(Int?.self, at: "page"), let results = try request.query.get(Int?.self, at: "results_per_page") {
             
             // Get all the models in the range specified by the query parameters passed in.
-            return Product.query(on: request).range(lower: (results * (page - 1)) + 1, upper: results * page).all().each(to: ProductResponseBody.self) { product in
+            return query.range(lower: (results * (page - 1)) + 1, upper: results * page).all().each(to: ProductResponseBody.self) { product in
                 
                 // For each product fetched from the database, create a `ProductResponseBody` from it.
                 return Promise(product: product, on: request).futureResult
@@ -89,7 +112,7 @@ final class ProductController: RouteCollection {
         } else {
             
             // Run the query to fetch all the rows from the `products` database table.
-            return Product.query(on: request).all().each(to: ProductResponseBody.self) { product in
+            return query.all().each(to: ProductResponseBody.self) { product in
                 
                 // For each product fetched from the database, create a `ProductResponseBody` from it.
                 return Promise(product: product, on: request).futureResult

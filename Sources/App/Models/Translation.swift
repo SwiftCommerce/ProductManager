@@ -19,6 +19,9 @@ protocol Translation: class, Content, Model, Migration, Parameter where Self.Dat
     
     /// The language code of the translation, i.e. 'en', 'es', etc.
     var languageCode: String { get set }
+    
+    /// The ID of the parent model for the translation.
+    var parentID: Int { get }
 }
 
 /// Default implementations of methods and computed properties for the `Translation` protocol.
@@ -71,12 +74,16 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
     /// that the translation is used for.
     var priceId: Price.ID?
     
+    /// The ID of the `Product` model that owns the translation.
+    let parentID: Product.ID
+    
     ///
-    init(name: String, description: String, languageCode: String, priceId: Price.ID?) {
+    init(name: String, description: String, languageCode: String, priceId: Price.ID?, parentID: Product.ID) {
         self.name = name
         self.description = description
         self.languageCode = languageCode
         self.priceId = priceId
+        self.parentID = parentID
     }
     
     /// Creates a `ProductTranslation` from a `TranslationRequestContent`,
@@ -99,8 +106,13 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
         return price.save(on: request).flatMap(to: TranslationResponseBody.self) { (price) in
             
             // Create a new `ProductTranslation`, save it to the database, and convert it to a `TranslationResponseBody`.
-            return try ProductTranslation(name: content.name, description: content.description, languageCode: content.languageCode, priceId: price.requireID())
-                .save(on: request).response(on: request)
+            return try ProductTranslation(
+                name: content.name,
+                description: content.description,
+                languageCode: content.languageCode,
+                priceId: price.requireID(), parentID:
+                content.parentID
+            ).save(on: request).response(on: request)
         }
     }
 }
@@ -118,11 +130,15 @@ final class CategoryTranslation: Translation, TranslationRequestInitializable {
     /// The code of the language the translation is in.
     var languageCode: String
     
+    /// The ID of the `Category` that owns the translation.
+    let parentID: Category.ID
+    
     ///
-    init(name: String, description: String, languageCode: String) {
+    init(name: String, description: String, languageCode: String, parentID: Category.ID) {
         self.name = name
         self.description = description
         self.languageCode = languageCode
+        self.parentID = parentID
     }
     
     /// Creates a `CategoryTranslation` from a `TranslationRequestContent`,
@@ -135,7 +151,12 @@ final class CategoryTranslation: Translation, TranslationRequestInitializable {
     static func create(from content: TranslationRequestContent, with request: Request) -> Future<TranslationResponseBody> {
         
         // Create a `CategoryTranslation`, save it to the database, ans convert it to a `TranslationResponseBody`.
-        return CategoryTranslation(name: content.name, description: content.description, languageCode: content.languageCode).save(on: request).response(on: request)
+        return CategoryTranslation(
+            name: content.name,
+            description: content.description,
+            languageCode: content.languageCode,
+            parentID: content.parentID
+        ).save(on: request).response(on: request)
     }
 }
 
@@ -172,6 +193,9 @@ struct TranslationRequestContent: Content {
     
     ///
     let priceActive: Bool?
+    
+    ///
+    let parentID: Int
 }
 
 /// A representation of a translation type that gets returned from a route handler.

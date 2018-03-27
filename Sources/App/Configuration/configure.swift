@@ -30,6 +30,7 @@ public func configure(
     // Configure a MySQL database.
     var databases = DatabaseConfig()
     
+    // We use the `database` var localy, but Vapor Cloud uses `DATABASE_DB`.
     let databaseName: String
     if let name = Environment.get("database") {
         databaseName = name
@@ -39,6 +40,9 @@ public func configure(
         throw Abort.init(.failedDependency, reason: "Missing environment variable `database`.")
     }
     
+    // Configure the MySQL Database.
+    // If we are in Vapor Cloud, we use the available env vars,
+    // otherwise we use the values for local development
     let config = MySQLDatabaseConfig.init(
         hostname: Environment.get("DATABASE_HOSTNAME") ?? "localhost",
         port: 3306,

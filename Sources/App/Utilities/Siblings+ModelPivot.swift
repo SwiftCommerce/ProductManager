@@ -18,14 +18,6 @@ extension Category {
     }
 }
 
-extension Product {
-    
-    /// Gets the attributes connected to the current `Product` model.
-    var attributes: Siblings<Product, Attribute, ProductAttribute> {
-        return self.siblings()
-    }
-}
-
 extension Category {
     
     /// Gets the categories connected to the current `Category` model.

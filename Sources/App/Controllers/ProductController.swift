@@ -12,10 +12,10 @@ struct ProductUpdateBody: Content {
     struct AttributeUpdate: Content {
         
         /// The IDs of the attributes to attach (create pivots) to the prodcut.
-        let attach: [Attribute.ID]?
+        let create: [AttributeContent]?
         
         /// The IDs of the attributes to detach (delete pivots) from the prodcut.
-        let detach: [Attribute.ID]?
+        let delete: [Attribute.ID]?
     }
     
     /// A decoded JSON object to get the IDs of `Attribute` models
@@ -126,8 +126,8 @@ final class ProductController: RouteCollection {
         let product = try request.parameter(Product.self)
         
         // Get all models that have an ID in any if the request bodies' arrays.
-        let detachAttributes = Attribute.query(on: request).all(where: \.name, in: body.attributes?.detach)
-        let attachAttributes = Attribute.query(on: request).all(where: \.name, in: body.attributes?.attach)
+        let detachAttributes = Attribute.query(on: request).all(where: \.name, in: body.attributes?.delete)
+        let attachAttributes = Future.map(on: request) { body.attributes?.create ?? [] }
         
         let detachCategories = Category.query(on: request).all(where: \.id, in: body.categories?.detach)
         let attachCategories = Category.query(on: request).all(where: \.id, in: body.categories?.attach)
@@ -135,8 +135,8 @@ final class ProductController: RouteCollection {
         // Attach and detach the models fetched with the ID arrays.
         // This means we either create or delete a row in a pivot table.
         let attributes = Async.flatMap(to: Void.self, product, detachAttributes, attachAttributes) { (product, detach, attach) in
-            let detached = detach.map({ product.attributes.detach($0, on: request) }).flatten(on: request)
-            let attached = try attach.map({ try ProductAttribute(product: product, attribute: $0).save(on: request) }).flatten(on: request).transform(to: ())
+            let detached = try detach.map({ try product.attributes(on: request).detach($0, on: request) }).flatten(on: request)
+            let attached = try attach.map({ try Attribute(name: $0.name, value: $0.value, productID: product.requireID()).save(on: request) }).flatten(on: request).transform(to: ())
             
             // This syntax allows you to complete the current future
             // when both of the futures in the array are complete.

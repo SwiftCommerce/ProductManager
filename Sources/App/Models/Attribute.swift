@@ -21,6 +21,16 @@ final class Attribute: Content, MySQLModel, Migration, Parameter {
     }
 }
 
+/// Data used to create an `Attribute` for a `Product` model.
+struct AttributeContent: Content {
+    
+    ///
+    let name: String
+    
+    ///
+    let value: String
+}
+
 extension Product {
     
     /// Creates a query that gets all `Attribute` model connected to the current product.
@@ -30,5 +40,11 @@ extension Product {
     /// - returns: A `QueryBuilder` that fetches `Attribute` models connected to the current product.
     func attributes(on executor: DatabaseConnectable)throws -> QueryBuilder<Attribute, Attribute> {
         return try Attribute.query(on: executor).filter(\.productID == self.id)
+    }
+}
+
+extension QueryBuilder where Model == Attribute, Result == Attribute {
+    func detach(_ attribute: Attribute, on executor: DatabaseConnectable)throws -> Future<Void> {
+        return try self.filter(\.id == attribute.id).delete()
     }
 }

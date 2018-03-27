@@ -52,7 +52,7 @@ final class AttributesController: RouteCollection {
     func index(_ request: Request)throws -> Future<[Attribute]> {
         
         // Get the `Product` model from the route path, get all of the `Attribute` models connected to it, and return them.
-        return try request.parameter(Product.self).flatMap(to: [Attribute].self, { try $0.attributes.query(on: request).all() })
+        return try request.parameter(Product.self).flatMap(to: [Attribute].self, { try $0.attributes(on: request).all() })
     }
     
     /// Get an `Attribute` connected to a `Product` with a specified ID.
@@ -65,7 +65,7 @@ final class AttributesController: RouteCollection {
             let id = try request.parameter(Int.self)
             
             // Get the first attribute with the `Int` parameter as it's ID from all attributes connected to the product and unwrap it.
-            return try product.attributes.query(on: request).filter(\.id == id).first().unwrap(or: Abort(.notFound, reason: "No attribute connected to product with ID '\(id)'"))
+            return try product.attributes(on: request).filter(\.id == id).first().unwrap(or: Abort(.notFound, reason: "No attribute connected to product with ID '\(id)'"))
         }
     }
     
@@ -85,11 +85,11 @@ final class AttributesController: RouteCollection {
         return flatMap(to: Product.self, product, newValue, { (product, newValue) in
             
             // Find the attribute connected to the product with the ID passed in, update its `value` property, and return the product.
-            return try product.attributes.query(on: request).filter(\Attribute.id == id).update(\Attribute.value, to: newValue).transform(to: product)
+            return try product.attributes(on: request).filter(\Attribute.id == id).update(\Attribute.value, to: newValue).transform(to: product)
         }).flatMap(to: Attribute.self, { product in
             
             // `QueryBuilder.update` returns `Future<Void>`, so to get the updated attribute, we need to run another query.
-            return try product.attributes.query(on: request).filter(\Attribute.id == id).first().unwrap(or: Abort(.notFound, reason: ""))
+            return try product.attributes(on: request).filter(\Attribute.id == id).first().unwrap(or: Abort(.notFound, reason: ""))
         })
     }
     
@@ -100,8 +100,7 @@ final class AttributesController: RouteCollection {
         return try flatMap(to: HTTPStatus.self, request.parameter(Product.self), request.parameter(Attribute.self), { (product, attribute) in
             
             // Get the prodcut's attributes, and detach the attribute passed in.
-            let attributes = product.attributes
-            return attributes.detach(attribute, on: request).transform(to: .noContent)
+            return try product.attributes(on: request).detach(attribute, on: request).transform(to: .noContent)
         })
     }
 }

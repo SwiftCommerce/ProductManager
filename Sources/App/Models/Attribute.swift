@@ -20,3 +20,15 @@ final class Attribute: Content, MySQLModel, Migration, Parameter {
         self.productID = productID
     }
 }
+
+extension Product {
+    
+    /// Creates a query that gets all `Attribute` model connected to the current product.
+    ///
+    /// - parameter executor: The object that gets a connection to the database
+    ///   to run the query.
+    /// - returns: A `QueryBuilder` that fetches `Attribute` models connected to the current product.
+    func attributes(on executor: DatabaseConnectable)throws -> QueryBuilder<Attribute, Attribute> {
+        return try Attribute.query(on: executor).filter(\.productID == self.id)
+    }
+}

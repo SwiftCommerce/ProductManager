@@ -30,6 +30,10 @@ public func configure(
     // Configure a MySQL database.
     var databases = DatabaseConfig()
     
+    if !env.isRelease {
+        databases.enableLogging(on: .mysql)
+    }
+    
     // We use the `database` var localy, but Vapor Cloud uses `DATABASE_DB`.
     let databaseName: String
     if let name = Environment.get("database") {

@@ -16,7 +16,7 @@ final class AttributesController: RouteCollection {
         
         // Registers a POST endpont at `products/:product/attributes`.
         // This route automaticly decodes the request's body to an `Attribute` model.
-        attributes.post(Attribute.self, use: create)
+        attributes.post(AttributeContent.self, use: create)
         
         // Registers a GET endpont at `products/:product/attributes`.
         attributes.get(use: index)
@@ -33,18 +33,25 @@ final class AttributesController: RouteCollection {
     
     /// Creates a new `Attribute` model from a request and saves it to the database.
     /// This route handler requires the router to decode the request's body to an `Attribute` and pass the model in with the request.
-    func create(_ request: Request, _ attribute: Attribute)throws -> Future<Attribute> {
+    func create(_ request: Request, _ attribute: AttributeContent)throws -> Future<Attribute> {
+        
+        // Get the `Product` model from the route parameters.
+        let parent = try request.parameter(Product.self)
         
         // Get the amount of attributes that already exist in the database with the name of the new attribute.
-        return try Attribute.query(on: request).filter(\.name == attribute.name).count().flatMap(to: Attribute.self) { (attributeCount) in
+        let attributeCount = parent.flatMap(to: Int.self) { (product) in
+            return try Attribute.query(on: request).filter(\.name == attribute.name).filter(\.productID == product.requireID()).count()
+        }
+        
+        return flatMap(to: Attribute.self, attributeCount, parent) { (attributeCount, parent) in
             
             // Verify that there are less then one (0 or fewer) attributes already in the database with the name passed in.
             guard attributeCount < 1 else {
                 throw Abort(.badRequest, reason: "Attribute already exists for product with name '\(attribute.name)'")
             }
             
-            // Save the new attribute to the database and return it from the route.
-            return attribute.save(on: request)
+            // Create the new attribute, Save it to the database, and return it from the route.
+            return try Attribute(name: attribute.name, value: attribute.value, productID: parent.requireID()).save(on: request)
         }
     }
     

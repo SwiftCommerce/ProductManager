@@ -104,7 +104,7 @@ final class ProductController: RouteCollection {
         if let page = try request.query.get(Int?.self, at: "page"), let results = try request.query.get(Int?.self, at: "results_per_page") {
             
             // Get all the models in the range specified by the query parameters passed in.
-            return query.range(lower: (results * (page - 1)) + 1, upper: results * page).all().each(to: ProductResponseBody.self) { product in
+            return query.range(lower: (results * page) - results, upper: (results * page) - 1).all().each(to: ProductResponseBody.self) { product in
                 
                 // For each product fetched from the database, create a `ProductResponseBody` from it.
                 return Promise(product: product, on: request).futureResult

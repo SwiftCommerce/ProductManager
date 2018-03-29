@@ -1,5 +1,4 @@
-import Fluent
-import CodableKit
+import FluentSQL
 
 extension QueryBuilder {
     
@@ -10,8 +9,7 @@ extension QueryBuilder {
     ///   - values: The values to check for in the columns.
     /// - Returns: All the models that match the given query, wrapped in a future.
     @discardableResult
-    public func all<T>(where field: KeyPath<Model, T>, in values: [Model.Database.QueryDataConvertible]?) -> Future<[Result]> where T: KeyStringDecodable {
-        
+    public func models<Value>(where field: KeyPath<Model, Value>, in values: [Value]?) -> Future<[Result]> where Value: ReflectionDecodable {
         // This method is different because we allow `nil` to be passed in instead of an array.
         // If we get `nil` instead of an array, return an empty array immediately, it saves time.
         guard let values = values else {
@@ -24,14 +22,7 @@ extension QueryBuilder {
         return Future.flatMap(on: self.connection.eventLoop) { () -> EventLoopFuture<[Result]> in
             
             // Since `value` is not `nil`, run the filter and get all the resulting models.
-            return try self.filter(field, in: values).all()
+            return try self.filter(field ~~ values).all()
         }
-    }
-}
-
-// TODO: - This extension is here until it is added to `FluentMySQL`.
-extension Bool: MySQLColumnDefinitionStaticRepresentable {
-    public static var mySQLColumnDefinition: MySQLColumnDefinition {
-        return .tinyInt()
     }
 }

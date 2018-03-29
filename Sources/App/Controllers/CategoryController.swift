@@ -71,8 +71,8 @@ final class CategoryController: RouteCollection {
     func update(_ request: Request, _ categories: CategoryUpdateBody)throws -> Future<CategoryResponseBody> {
         
         // Get categories from the database with IDs that appear in `categories` properties.
-        let attach = Category.query(on: request).all(where: \.id, in: categories.attach)
-        let detach = Category.query(on: request).all(where: \.id, in: categories.detach)
+        let attach = Category.query(on: request).models(where: \Category.id, in: categories.attach)
+        let detach = Category.query(on: request).models(where: \Category.id, in: categories.detach)
         
         // Get the category to update from route parameters.
         let category = try request.parameter(Category.self)

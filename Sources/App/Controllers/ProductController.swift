@@ -1,3 +1,5 @@
+import FluentSQL
+
 // MARK: - Request Body Type
 
 /// A decoded request body used to
@@ -133,7 +135,7 @@ final class ProductController: RouteCollection {
         
         // Get the category IDs from the request query and get all the `Category` models with the IDs.
         let categoryIDs = try request.query.get([Category.ID].self, at: "category_ids")
-        let futureCategories = try Category.query(on: request).filter(\.id, in: categoryIDs).all()
+        let futureCategories = try Category.query(on: request).filter(\.id ~~ categoryIDs).all()
         
         
         return futureCategories.flatMap(to: [[Product]].self) { (categories) in
@@ -159,11 +161,11 @@ final class ProductController: RouteCollection {
         let product = try request.parameter(Product.self)
         
         // Get all models that have an ID in any if the request bodies' arrays.
-        let detachAttributes = Attribute.query(on: request).all(where: \.name, in: body.attributes?.delete)
+        let detachAttributes = Attribute.query(on: request).models(where: \Attribute.id, in: body.attributes?.delete)
         let attachAttributes = Future.map(on: request) { body.attributes?.create ?? [] }
         
-        let detachCategories = Category.query(on: request).all(where: \.id, in: body.categories?.detach)
-        let attachCategories = Category.query(on: request).all(where: \.id, in: body.categories?.attach)
+        let detachCategories = Category.query(on: request).models(where: \Category.id, in: body.categories?.detach)
+        let attachCategories = Category.query(on: request).models(where: \Category.id, in: body.categories?.attach)
         
         // Attach and detach the models fetched with the ID arrays.
         // This means we either create or delete a row in a pivot table.

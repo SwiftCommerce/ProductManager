@@ -1,4 +1,4 @@
-enum ProductStatus: Int, Codable, KeyStringDecodable, MySQLDataConvertible, MySQLColumnDefinitionStaticRepresentable {
+enum ProductStatus: Int, Codable, ReflectionDecodable, MySQLDataConvertible, MySQLColumnDefinitionStaticRepresentable {
     case draft
     case published
     case deactivated

@@ -26,3 +26,29 @@ extension QueryBuilder {
         }
     }
 }
+
+extension Model {
+    
+    /// Allows you to run raw queries in a model type.
+    /// The data from the query is decoded to the type the method is called on.
+    ///
+    /// - Parameters:
+    ///   - query: The query to run on the database.
+    ///   - parameters: Replacement values for `?` placeholders in the query.
+    ///   - connector: The object to create a connection to the database with.
+    /// - Returns: An array of model instances created from the fetched data, wrapped in a future.
+    static func raw(_ query: String, with parameters: [MySQLDataConvertible] = [], on connector: DatabaseConnectable) -> Future<[Self]> {
+        
+        // I would document this, but I hope it get Sherlocked by Fluent.
+        return connector.connect(to: .mysql).flatMap(to: [[MySQLColumn : MySQLData]].self) { (connection) in
+            return connection.query(query, parameters)
+        }.map(to: [Self].self, { (data) in
+            return try data.map({ row -> Self in
+                let genericData: [QueryField: MySQLData] = row.reduce(into: [:]) { (row, cell) in
+                    row[QueryField(entity: cell.key.table, name: cell.key.name)] = cell.value
+                }
+                return try QueryDataDecoder(MySQLDatabase.self, entity: Self.entity).decode(Self.self, from: genericData)
+            })
+        })
+    }
+}

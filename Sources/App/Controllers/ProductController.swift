@@ -86,23 +86,29 @@ final class ProductController: RouteCollection {
         
         // Try to got the `filter` query string from the request.
         if let filters = try request.query.get([String: String]?.self, at: "filter") {
-            
-            // Get all the attributes that have the correct `name/value` pairs.
-            let attributes = try Attribute.query(on: request).group(.and) { query in
-                
-                // Loop over each filter to get a single `name/value` pair.
-                try filters.forEach() { filter in
-                    let (name, value) = filter
 
-                    // Use an `AND` operation here, otherwise we get `name == name OR value == value`.
-                    try query.group(.or) { query in
-                        try query.filter(\.name == name)
-                        try query.filter(\.value == value)
-                    }
-                }
-            }.all()
+            // We use parameters instead of injecting data
+            // into the query to prevent SQL injection attacks.
+            var parameters: [MySQLDataConvertible] = []
+            
+            let filter = filters.map({ (filter) in
+                
+                // Add the filter's name and value to the parameters
+                // so thet can be access by the query.
+                parameters.append(filter.key)
+                parameters.append(filter.value)
+                
+                // For each filter, we need a SQL `AND` statement.
+                return "(`name` = ? AND `value` = ?)"
+                
+                // Join the array of filters with `OR` to get all attributes.
+            }).joined(separator: " OR ")
+            
+            // Run the raw query with the filter parameters
+            let attributes = Attribute.raw("SELECT * FROM attributes WHERE \(filter)", with: parameters, on: request)
             
             query = attributes.map(to: QueryBuilder<Product, Product>.self) { (attributes) in
+                
                 // Group the attributes togeather by their `productID` property.
                 let keys = attributes.group(by: \.productID).filter({ (id, attributes) -> Bool in
                     

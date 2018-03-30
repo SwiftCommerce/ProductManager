@@ -1,3 +1,4 @@
+import FluentMySQL
 import FluentSQL
 
 // MARK: - Request Body Type
@@ -81,44 +82,60 @@ final class ProductController: RouteCollection {
         
         // Create a non-assigned `QueryBuilder` constant.
         // This allows us to assign different queries depending on wheather the `filter` query string exists.
-        let query: QueryBuilder<Product, Product>
+        let query: Future<QueryBuilder<Product, Product>>
         
         // Try to got the `filter` query string from the request.
         if let filters = try request.query.get([String: String]?.self, at: "filter") {
             
-            // `filter` exists. Create a query that joins `Product` to `Attribute`, then add an `OR` clause.
-            query = try Product.query(on: request).join(field: \Attribute.productID).group(.or) { (query) in
+            // Get all the attributes that have the correct `name/value` pairs.
+            let attributes = try Attribute.query(on: request).group(.and) { query in
                 
-                // For every filter, add another `OR` case to the query that gets `Product` models
-                // connected to attributes with both a given nams and value.
-                try filters.forEach({ (filter) in
+                // Loop over each filter to get a single `name/value` pair.
+                try filters.forEach() { filter in
                     let (name, value) = filter
-                    try query.filter(Attribute.self, \.name == name).filter(Attribute.self, \.value == value)
-                })
+
+                    // Use an `AND` operation here, otherwise we get `name == name OR value == value`.
+                    try query.group(.or) { query in
+                        try query.filter(\.name == name)
+                        try query.filter(\.value == value)
+                    }
+                }
+            }.all()
+            
+            query = attributes.map(to: QueryBuilder<Product, Product>.self) { (attributes) in
+                // Group the attributes togeather by their `productID` property.
+                let keys = attributes.group(by: \.productID).filter({ (id, attributes) -> Bool in
+                    
+                    // If we have the same amount of filters as attributes, we have a match!
+                    return attributes.count == filters.count
+                }).keys
+                
+                // Get all products that have the correct amount of attributes.
+                let ids = Array(keys)
+                return try Product.query(on: request).filter(\.id ~~ ids)
             }
         } else {
             
             // `filter` doesn't exist. Create a generic query builder instance.
-            query = Product.query(on: request)
+            query = Future.map(on: request) { Product.query(on: request) }
         }
         
-        // If query parameters where passed in for pagination, limit the amount of models we fetch.
-        if let page = try request.query.get(Int?.self, at: "page"), let results = try request.query.get(Int?.self, at: "results_per_page") {
+        return query.flatMap(to: [Product].self) { (query) in
             
-            // Get all the models in the range specified by the query parameters passed in.
-            return query.range(lower: (results * page) - results, upper: (results * page) - 1).all().each(to: ProductResponseBody.self) { product in
+            // If query parameters where passed in for pagination, limit the amount of models we fetch.
+            if let page = try request.query.get(Int?.self, at: "page"), let results = try request.query.get(Int?.self, at: "results_per_page") {
                 
-                // For each product fetched from the database, create a `ProductResponseBody` from it.
-                return Promise(product: product, on: request).futureResult
+                // Get all the models in the range specified by the query parameters passed in.
+                return query.range(lower: (results * page) - results, upper: (results * page) - 1).all()
+            } else {
+                
+                // Run the query to fetch all the rows from the `products` database table.
+                return query.all()
             }
-        } else {
+        }.each(to: ProductResponseBody.self) { (product) in
             
-            // Run the query to fetch all the rows from the `products` database table.
-            return query.all().each(to: ProductResponseBody.self) { product in
-                
-                // For each product fetched from the database, create a `ProductResponseBody` from it.
-                return Promise(product: product, on: request).futureResult
-            }
+            // For each product fetched from the database, create a `ProductResponseBody` from it.
+            return Promise(product: product, on: request).futureResult
         }
     }
     

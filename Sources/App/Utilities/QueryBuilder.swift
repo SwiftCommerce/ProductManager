@@ -1,5 +1,4 @@
-import Fluent
-import CodableKit
+import FluentSQL
 
 extension QueryBuilder {
     
@@ -10,8 +9,7 @@ extension QueryBuilder {
     ///   - values: The values to check for in the columns.
     /// - Returns: All the models that match the given query, wrapped in a future.
     @discardableResult
-    public func all<T>(where field: KeyPath<Model, T>, in values: [Model.Database.QueryDataConvertible]?) -> Future<[Result]> where T: KeyStringDecodable {
-        
+    public func models<Value>(where field: KeyPath<Model, Value>, in values: [Value]?) -> Future<[Result]> where Value: ReflectionDecodable {
         // This method is different because we allow `nil` to be passed in instead of an array.
         // If we get `nil` instead of an array, return an empty array immediately, it saves time.
         guard let values = values else {
@@ -24,14 +22,33 @@ extension QueryBuilder {
         return Future.flatMap(on: self.connection.eventLoop) { () -> EventLoopFuture<[Result]> in
             
             // Since `value` is not `nil`, run the filter and get all the resulting models.
-            return try self.filter(field, in: values).all()
+            return try self.filter(field ~~ values).all()
         }
     }
 }
 
-// TODO: - This extension is here until it is added to `FluentMySQL`.
-extension Bool: MySQLColumnDefinitionStaticRepresentable {
-    public static var mySQLColumnDefinition: MySQLColumnDefinition {
-        return .tinyInt()
+extension Model {
+    
+    /// Allows you to run raw queries in a model type.
+    /// The data from the query is decoded to the type the method is called on.
+    ///
+    /// - Parameters:
+    ///   - query: The query to run on the database.
+    ///   - parameters: Replacement values for `?` placeholders in the query.
+    ///   - connector: The object to create a connection to the database with.
+    /// - Returns: An array of model instances created from the fetched data, wrapped in a future.
+    static func raw(_ query: String, with parameters: [MySQLDataConvertible] = [], on connector: DatabaseConnectable) -> Future<[Self]> {
+        
+        // I would document this, but I hope it get Sherlocked by Fluent.
+        return connector.connect(to: .mysql).flatMap(to: [[MySQLColumn : MySQLData]].self) { (connection) in
+            return connection.query(query, parameters)
+        }.map(to: [Self].self, { (data) in
+            return try data.map({ row -> Self in
+                let genericData: [QueryField: MySQLData] = row.reduce(into: [:]) { (row, cell) in
+                    row[QueryField(entity: cell.key.table, name: cell.key.name)] = cell.value
+                }
+                return try QueryDataDecoder(MySQLDatabase.self, entity: Self.entity).decode(Self.self, from: genericData)
+            })
+        })
     }
 }

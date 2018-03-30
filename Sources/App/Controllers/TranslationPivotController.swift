@@ -10,12 +10,9 @@ typealias CategoryTranslationController = TranslationPivotController<Category, C
 ///
 /// - The `Parent` type must conform to `MySQLModel`, `Parameter`, and `TranslationParent`.
 /// - The `Parent.ResolvedParameter` type must be equal to `Future<Parent>`.
-/// - The `Translation` type must be equal to `Parent.TranslationType`.
+/// - The `Translation` type must be equal to `Parent.Translation` and conform to `TranslationRequestInitializable`.
 final class TranslationPivotController<Parent, Translation>: RouteCollection
-where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParameter == Future<Parent>, Translation == Parent.TranslationType {
-    
-    /// The pivot type used to connect the `Parent` and `Translation` types.
-    typealias Pivot = ModelTranslation<Parent, Translation>
+where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParameter == Future<Parent>, Translation == Parent.Translation, Translation: TranslationRequestInitializable {
     
     /// The root path element of the router group for the controller instance.
     let root: String
@@ -36,7 +33,7 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
         translations.get(use: index)
         
         // Registers a POST route at `/` with the router.
-        translations.post(use: add)
+        translations.post(TranslationRequestContent.self, at: self.root, "translations", use: add)
         
         // Registers a DELETE route at /:tranalation` with the router.
         translations.delete(Translation.parameter, use: remove)
@@ -49,8 +46,8 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
         return try request.parameter(Parent.self).flatMap(to: [Translation].self, { (parent) in
             
             // Get all translations connected to the parent.
-            let translations = parent.translations
-            return try translations.query(on: request).all()
+            let translations = try parent.translations(on: request)
+            return translations.all()
         }).flatMap(to: [TranslationResponseBody].self, { (tranlations) in
             
             // Loop over all translations, converting each one to a `TranslationResponseBody`.
@@ -59,24 +56,11 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
     }
     
     /// Add a new `Translation` model with a given name to a `Product` model.
-    func add(_ request: Request)throws -> Future<TranslationResponseBody> {
+    func add(_ request: Request, _ content: TranslationRequestContent)throws -> Future<TranslationResponseBody> {
         
-        // Get `Parent` model from request route paramaters.
-        let parent = try request.parameter(Parent.self)
-        
-        // Get the value of the `translation_name` in the request body.
-        let translation = request.content.get(String.self, at: "translation_name").flatMap(to: Translation.self) { (name) in
-            
-            // Get the `Translation` model with the name from the request body.
-            return try Translation.find(name, on: request).unwrap(or: Abort(.badRequest, reason: "No translation found with name '\(name)'"))
-        }
-        
-        return flatMap(to: TranslationResponseBody.self, parent, translation) { (parent, translation) in
-            
-            // Create a new pivot between the `Parent` and `Translation` models,
-            // then return the translation converted to a `TranslationResponseBody`.
-            return try Pivot(parent: parent, translation: translation).save(on: request).transform(to: translation).response(on: request)
-        }
+        // Create a `Translation` instance from the request's body,
+        // save it to the database, and convert it to a `TranslationResponseBody`.
+        return Translation.create(from: content, with: request).save(on: request).response(on: request)
     }
     
     /// Detach a `Translation` model from a `Parent` model.
@@ -89,7 +73,7 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
         return flatMap(to: HTTPStatus.self, product, translation, { (product, translation) in
             
             // Detach the translation from the prodcut (by deleteing the pivot).
-            let detached = product.translations.detach(translation, on: request)
+            let detached = try product.translations(on: request).filter(\.name == translation.name).delete()
             
             // Once the model are detahced, return HTTP status 204 (No Content)
             // signalling succesful deltetion.

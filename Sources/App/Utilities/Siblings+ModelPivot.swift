@@ -18,19 +18,11 @@ extension Category {
     }
 }
 
-extension Product {
-    
-    /// Gets the attributes connected to the current `Product` model.
-    var attributes: Siblings<Product, Attribute, ProductAttribute> {
-        return self.siblings()
-    }
-}
-
 extension Category {
     
     /// Gets the categories connected to the current `Category` model.
     var subCategories: Siblings<Category, Category, CategoryPivot> {
-        return self.siblings(related: Category.self, through: CategoryPivot.self, CategoryPivot.leftIDKey, CategoryPivot.rightIDKey)
+        return self.siblings(related: Category.self, through: CategoryPivot.self, CategoryPivot.rightIDKey, CategoryPivot.leftIDKey)
     }
 }
 
@@ -38,33 +30,9 @@ extension Category {
 // MARK: - Translation Pivots
 
 extension Product: TranslationParent {
-    
-    /// Gets the translations connected to the current `Product` model.
-    var translations: Siblings<Product, ProductTranslation, ProductTranslationPivot> {
-        return siblings()
-    }
+    typealias Translation = ProductTranslation
 }
 
 extension Category: TranslationParent {
-    
-    /// Gets the translations connected to the current `Category` model.
-    var translations: Siblings<Category, CategoryTranslation, CategoryTranslationPivot> {
-        return siblings()
-    }
-}
-
-extension ProductTranslation {
-    
-    /// Gets the products connected to the current `ProductTranslation` model.
-    var products: Siblings<ProductTranslation, Product, ProductTranslationPivot> {
-        return siblings()
-    }
-}
-
-extension CategoryTranslation {
-    
-    /// Gets the categories connected to the current `CategoryTranslation` model.
-    var categories: Siblings<CategoryTranslation, Category, CategoryTranslationPivot> {
-        return siblings()
-    }
+    typealias Translation = CategoryTranslation
 }

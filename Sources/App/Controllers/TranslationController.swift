@@ -112,14 +112,14 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
     func create(_ request: Request, _ body: TranslationRequestContent)throws -> Future<TranslationResponseBody> {
         
         // Create a new `Translation` with the request and its body.
-        return Translation.create(from: body, with: request)
+        return Translation.create(from: body, with: request).response(on: request)
     }
     
     /// Gets all the `Translation` models from the database.
     func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
         
         // Fetch all `Translation` models from the database.
-        return Translation.query(on: request).all().loop(to: TranslationResponseBody.self, transform: { (translation) in
+        return Translation.query(on: request).all().each(to: TranslationResponseBody.self, transform: { (translation) in
             
             // Iterate over each model and convert it to a `TranslationResponseBody`.
             return translation.response(on: request)
@@ -167,14 +167,9 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
             // Delete the connections to the model's respective parent models.
             // If the model is a `ProductTranslation` model, delete its connection to its `Price` model.
             if let productTranslation = translation as? ProductTranslation {
-                deletions.append(productTranslation.products.deleteConnections(on: request))
                 if let price = productTranslation.priceId {
                     try deletions.append(Price.query(on: request).filter(\.id == price).delete())
                 }
-            } else if let categoryTranslation = translation as? CategoryTranslation {
-                deletions.append(categoryTranslation.categories.deleteConnections(on: request))
-            } else {
-                throw Abort(.internalServerError, reason: "Unsupported translation type found")
             }
             
             // Once the connection deletions have complete, return the `Translation` model.

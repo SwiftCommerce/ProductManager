@@ -30,6 +30,11 @@ public func configure(
     // Configure a MySQL database.
     var databases = DatabaseConfig()
     
+    if !env.isRelease {
+        databases.enableLogging(on: .mysql)
+    }
+    
+    // We use the `database` var localy, but Vapor Cloud uses `DATABASE_DB`.
     let databaseName: String
     if let name = Environment.get("database") {
         databaseName = name
@@ -39,11 +44,14 @@ public func configure(
         throw Abort.init(.failedDependency, reason: "Missing environment variable `database`.")
     }
     
+    // Configure the MySQL Database.
+    // If we are in Vapor Cloud, we use the available env vars,
+    // otherwise we use the values for local development
     let config = MySQLDatabaseConfig.init(
         hostname: Environment.get("DATABASE_HOSTNAME") ?? "localhost",
         port: 3306,
         username: Environment.get("DATABASE_USER") ?? "root",
-        password: Environment.get("DATABASE_PASSWORD"),
+        password: Environment.get("DATABASE_PASSWORD") ?? "password",
         database:  databaseName
     )
     databases.add(database: MySQLDatabase(config: config), as: .mysql)
@@ -55,12 +63,10 @@ public func configure(
     migrations.add(model: Product.self, database: .mysql)
     migrations.add(model: Price.self, database: .mysql)
     migrations.add(model: Attribute.self, database: .mysql)
+    migrations.add(model: CategoryPivot.self, database: .mysql)
     migrations.add(model: ProductCategory.self, database: .mysql)
-    migrations.add(model: ProductAttribute.self, database: .mysql)
     migrations.add(model: ProductTranslation.self, database: .mysql)
     migrations.add(model: CategoryTranslation.self, database: .mysql)
-    migrations.add(model: ProductTranslationPivot.self, database: .mysql)
-    migrations.add(model: CategoryTranslationPivot.self, database: .mysql)
     
     // Register Database and Migration configurations with the application services.
     services.register(databases)

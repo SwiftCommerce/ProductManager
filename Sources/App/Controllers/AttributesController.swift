@@ -16,7 +16,7 @@ final class AttributesController: RouteCollection {
         
         // Registers a POST endpont at `products/:product/attributes`.
         // This route automaticly decodes the request's body to an `Attribute` model.
-        attributes.post(Attribute.self, use: create)
+        attributes.post(AttributeContent.self, use: create)
         
         // Registers a GET endpont at `products/:product/attributes`.
         attributes.get(use: index)
@@ -33,18 +33,25 @@ final class AttributesController: RouteCollection {
     
     /// Creates a new `Attribute` model from a request and saves it to the database.
     /// This route handler requires the router to decode the request's body to an `Attribute` and pass the model in with the request.
-    func create(_ request: Request, _ attribute: Attribute)throws -> Future<Attribute> {
+    func create(_ request: Request, _ attribute: AttributeContent)throws -> Future<Attribute> {
+        
+        // Get the `Product` model from the route parameters.
+        let parent = try request.parameter(Product.self)
         
         // Get the amount of attributes that already exist in the database with the name of the new attribute.
-        return try Attribute.query(on: request).filter(\.name == attribute.name).count().flatMap(to: Attribute.self) { (attributeCount) in
+        let attributeCount = parent.flatMap(to: Int.self) { (product) in
+            return try Attribute.query(on: request).filter(\.name == attribute.name).filter(\.productID == product.requireID()).count()
+        }
+        
+        return flatMap(to: Attribute.self, attributeCount, parent) { (attributeCount, parent) in
             
             // Verify that there are less then one (0 or fewer) attributes already in the database with the name passed in.
             guard attributeCount < 1 else {
                 throw Abort(.badRequest, reason: "Attribute already exists for product with name '\(attribute.name)'")
             }
             
-            // Save the new attribute to the database and return it from the route.
-            return attribute.save(on: request)
+            // Create the new attribute, Save it to the database, and return it from the route.
+            return try Attribute(name: attribute.name, value: attribute.value, productID: parent.requireID()).save(on: request)
         }
     }
     
@@ -52,7 +59,7 @@ final class AttributesController: RouteCollection {
     func index(_ request: Request)throws -> Future<[Attribute]> {
         
         // Get the `Product` model from the route path, get all of the `Attribute` models connected to it, and return them.
-        return try request.parameter(Product.self).flatMap(to: [Attribute].self, { try $0.attributes.query(on: request).all() })
+        return try request.parameter(Product.self).flatMap(to: [Attribute].self, { try $0.attributes(on: request).all() })
     }
     
     /// Get an `Attribute` connected to a `Product` with a specified ID.
@@ -65,7 +72,7 @@ final class AttributesController: RouteCollection {
             let id = try request.parameter(Int.self)
             
             // Get the first attribute with the `Int` parameter as it's ID from all attributes connected to the product and unwrap it.
-            return try product.attributes.query(on: request).filter(\.id == id).first().unwrap(or: Abort(.notFound, reason: "No attribute connected to product with ID '\(id)'"))
+            return try product.attributes(on: request).filter(\.id == id).first().unwrap(or: Abort(.notFound, reason: "No attribute connected to product with ID '\(id)'"))
         }
     }
     
@@ -85,11 +92,11 @@ final class AttributesController: RouteCollection {
         return flatMap(to: Product.self, product, newValue, { (product, newValue) in
             
             // Find the attribute connected to the product with the ID passed in, update its `value` property, and return the product.
-            return try product.attributes.query(on: request).filter(\Attribute.id == id).update(\Attribute.value, to: newValue).transform(to: product)
+            return try product.attributes(on: request).filter(\Attribute.id == id).update(\Attribute.value, to: newValue).transform(to: product)
         }).flatMap(to: Attribute.self, { product in
             
             // `QueryBuilder.update` returns `Future<Void>`, so to get the updated attribute, we need to run another query.
-            return try product.attributes.query(on: request).filter(\Attribute.id == id).first().unwrap(or: Abort(.notFound, reason: ""))
+            return try product.attributes(on: request).filter(\Attribute.id == id).first().unwrap(or: Abort(.notFound, reason: ""))
         })
     }
     
@@ -100,8 +107,7 @@ final class AttributesController: RouteCollection {
         return try flatMap(to: HTTPStatus.self, request.parameter(Product.self), request.parameter(Attribute.self), { (product, attribute) in
             
             // Get the prodcut's attributes, and detach the attribute passed in.
-            let attributes = product.attributes
-            return attributes.detach(attribute, on: request).transform(to: .noContent)
+            return try product.attributes(on: request).detach(attribute, on: request).transform(to: .noContent)
         })
     }
 }

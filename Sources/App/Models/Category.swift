@@ -14,13 +14,13 @@ final class Category: Content, MySQLModel, Migration, Parameter {
     ///
     /// - parameter executor: The object used to run the query for getting the translations.
     /// - returns: All the translations that are connected to the category through pivot models.
-    func translations(with request: Request) -> Future<[CategoryTranslation]> {
+    func translations(with executor: DatabaseConnectable) -> Future<[CategoryTranslation]> {
         
         // Verfiy the model has an ID.
-        return self.assertID(on: request).flatMap(to: [CategoryTranslation].self, { (id) in
+        return self.assertID(on: executor).flatMap(to: [CategoryTranslation].self, { (id) in
             
             // Fetch and return connected translations.
-            return try self.translations.query(on: request).all()
+            return try self.translations(on: executor).all()
         })
     }
 }

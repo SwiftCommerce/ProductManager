@@ -1,5 +1,5 @@
 /// A pivot connecting a `Category` model to its sub-categories.
-final class CategoryPivot: MySQLPivot {
+final class CategoryPivot: MySQLPivot, Migration {
     typealias Left = Category
     typealias Right = Category
     

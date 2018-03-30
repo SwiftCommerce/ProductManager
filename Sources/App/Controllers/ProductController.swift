@@ -132,7 +132,7 @@ final class ProductController: RouteCollection {
             if let page = try request.query.get(Int?.self, at: "page"), let results = try request.query.get(Int?.self, at: "results_per_page") {
                 
                 // Get all the models in the range specified by the query parameters passed in.
-                return query.range(lower: (results * page) - results, upper: (results * page) - 1).all()
+                return query.range(lower: (results * page) - results, upper: (results * page)).all()
             } else {
                 
                 // Run the query to fetch all the rows from the `products` database table.

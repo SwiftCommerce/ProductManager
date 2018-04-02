@@ -22,7 +22,7 @@ extension Category {
         return Future.flatMap(on: request, { () -> EventLoopFuture<CategoryNode> in
             
             // Get all of the category's sub-categories.
-            let children = try! self.subCategories.query(on: request).all()
+            let children = try! self.subCategories.query(on: request).sort(\.sort, .ascending).all()
             
             return children.flatMap(to: [CategoryNode].self) { (children) in
                 

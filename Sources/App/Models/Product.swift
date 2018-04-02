@@ -47,7 +47,7 @@ final class Product: Content, MySQLModel, Migration, Parameter {
         return Future.flatMap(on: request, {
             
             // Return all the `Category` models connected to the current `Product` through pivots.
-            return try self.categories.query(on: request).all()
+            return try self.categories.query(on: request).sort(\.sort, .ascending).all()
         })
     }
     

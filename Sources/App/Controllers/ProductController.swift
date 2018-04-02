@@ -158,7 +158,7 @@ final class ProductController: RouteCollection {
         
         // Get the category IDs from the request query and get all the `Category` models with the IDs.
         let categoryIDs = try request.query.get([Category.ID].self, at: "category_ids")
-        let futureCategories = try Category.query(on: request).filter(\.id ~~ categoryIDs).all()
+        let futureCategories = try Category.query(on: request).filter(\.id ~~ categoryIDs).sort(\.sort, .ascending).all()
         
         
         return futureCategories.flatMap(to: [[Product]].self) { (categories) in

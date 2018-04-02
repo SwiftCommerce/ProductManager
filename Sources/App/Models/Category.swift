@@ -70,7 +70,7 @@ extension Promise where T == CategoryResponseBody {
         do {
             
             // Get all the sub-categories connected to the category passed in.
-            let categories = try category.subCategories.query(on: request).all().flatMap(to: [CategoryResponseBody].self) { (categories) in
+            let categories = try category.subCategories.query(on: request).sort(\.sort, .ascending).all().flatMap(to: [CategoryResponseBody].self) { (categories) in
                 
                 // Convert the sub-categories to `CategoryResponseBody`s.
                 return categories.map({ Promise(category: $0, on: request).futureResult }).flatten(on: request)

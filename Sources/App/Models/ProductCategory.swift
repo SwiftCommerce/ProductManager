@@ -14,14 +14,10 @@ final class ProductCategory: MySQLPivot, Migration {
     init(product: Product, category: Category)throws {
         
         // Verfiy the `product` has been save to the database (that it has an ID).
-        guard let productId = product.id else {
-            fatalError("FIXME: Use a `FluentError`")
-        }
+        let productId = try product.requireID()
         
         // Verfiy the `category` has been save to the database.
-        guard let categoryId = category.id else {
-            fatalError("FIXME: Use a `FluentError`")
-        }
+        let categoryId = try category.requireID()
         
         self.productId = productId
         self.categoryId = categoryId

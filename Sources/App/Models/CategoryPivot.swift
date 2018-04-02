@@ -15,14 +15,10 @@ final class CategoryPivot: MySQLPivot, Migration {
     init(_ leftCategory: Category, _ rightCategory: Category)throws {
         
         // Verify the left `category` model has been saved to the database (by checking for an ID).
-        guard let left = leftCategory.id else {
-            fatalError("FIXME: Use a `FluentError`")
-        }
+        let left = try leftCategory.requireID()
         
         // Verify the right `category` model has been saved to the database.
-        guard let right = rightCategory.id else {
-            fatalError("FIXME: Use a `FluentError`")
-        }
+        let right = try rightCategory.requireID()
         
         self.right = right
         self.left = left

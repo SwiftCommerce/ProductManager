@@ -1,3 +1,5 @@
+import Async
+
 /// A pivot connecting a `Category` model to its sub-categories.
 final class CategoryPivot: MySQLPivot, Migration {
     typealias Left = Category
@@ -32,5 +34,19 @@ final class CategoryPivot: MySQLPivot, Migration {
         
         self.right = right
         self.left = left
+    }
+}
+
+extension Category {
+    func attachWithoutDuplication(_ category: Category, on executor: DatabaseConnectable)throws -> Future<Void> {
+        let leftCount = try CategoryPivot.query(on: executor).filter(\.left == self.id).count()
+        let rightCount = try CategoryPivot.query(on: executor).filter(\.right == self.id).count()
+        
+        return flatMap(to: Void.self, leftCount, rightCount) { (left, right) in
+            guard left < 1 && right < 1 else {
+                return executor.eventLoop.newSucceededFuture(result: ())
+            }
+            return try CategoryPivot(self, category).save(on: executor).transform(to: ())
+        }
     }
 }

@@ -86,7 +86,7 @@ final class CategoryController: RouteCollection {
             
             // Attach all categories to parent category with an ID in the `attach` array.
             // We don't use `categories.subCategories.attach` because we get weird compiler errors when we do.
-            let attached = try attach.map({ try CategoryPivot(category, $0).save(on: request) }).flatten(on: request).transform(to: ())
+            let attached = try attach.map({ try category.attachWithoutDuplication($0, on: request) }).flatten(on: request).transform(to: ())
             
             // Updates the category's `sort` property value if on exists in the request's body.
             category.sort = categories.sort ?? category.sort

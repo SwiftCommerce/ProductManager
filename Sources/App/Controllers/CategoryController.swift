@@ -6,6 +6,9 @@ struct CategoryUpdateBody: Content {
     
     /// The IDs of the categories to detach from the parent category that are attached through pivots.
     let detach: [Category.ID]?
+    
+    /// A new value for the category's `sort` property.
+    let sort: Int?
 }
 
 /// A controller for API endpoints that make operations on the `Category` model.
@@ -82,11 +85,15 @@ final class CategoryController: RouteCollection {
             let detached = detach.map({ category.subCategories.detach($0, on: request) }).flatten(on: request)
             
             // Attach all categories to parent category with an ID in the `attach` array.
-            // We don't use `categories.subCategories.attach` because we gett weird compiler errors when we do.
+            // We don't use `categories.subCategories.attach` because we get weird compiler errors when we do.
             let attached = try attach.map({ try CategoryPivot(category, $0).save(on: request) }).flatten(on: request).transform(to: ())
             
+            // Updates the category's `sort` property value if on exists in the request's body.
+            category.sort = categories.sort ?? category.sort
+            let sort = category.save(on: request).transform(to: ())
+            
             // Once attaching and detaching are complete, return the category that we updated.
-            return [detached, attached].flatten(on: request).transform(to: category)
+            return [detached, attached, sort].flatten(on: request).transform(to: category)
         }.response(on: request)
     }
     

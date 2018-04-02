@@ -38,7 +38,17 @@ final class CategoryPivot: MySQLPivot, Migration {
 }
 
 extension Category {
+    
+    /// Creates a `CategorPivot` connecting the current category
+    /// with another category if it is not already attached.
+    ///
+    /// - Parameters:
+    ///   - category: The category model to attach.
+    ///   - executor: The object to create a connection to the database with.
+    /// - Returns: A future which succedes with `Void` when the pivot is created.
+    /// - Throws: Errors that occur when querying the current pivots or creating the new pivot.
     func attachWithoutDuplication(_ category: Category, on executor: DatabaseConnectable)throws -> Future<Void> {
+        let pivot = try CategoryPivot(self, category)
         let leftCount = try CategoryPivot.query(on: executor).filter(\.left == self.id).count()
         let rightCount = try CategoryPivot.query(on: executor).filter(\.right == self.id).count()
         
@@ -46,7 +56,7 @@ extension Category {
             guard left < 1 && right < 1 else {
                 return executor.eventLoop.newSucceededFuture(result: ())
             }
-            return try CategoryPivot(self, category).save(on: executor).transform(to: ())
+            return pivot.save(on: executor).transform(to: ())
         }
     }
 }

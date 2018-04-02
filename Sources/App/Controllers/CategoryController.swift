@@ -23,7 +23,8 @@ final class CategoryController: RouteCollection {
         let categories = router.grouped("categories")
         
         // Registers a POST endpoint at `/categories`.
-        categories.post(use: create)
+        // The route automatically decodes the request's body to a `Category` model.
+        categories.post(Category.self, use: create)
         
         // Registers a GET endpoint at `/categories`.
         categories.get(use: index)
@@ -40,13 +41,10 @@ final class CategoryController: RouteCollection {
     }
     
     /// Creates a new `Category` model.
-    func create(_ request: Request)throws -> Future<CategoryResponseBody> {
+    func create(_ request: Request, category: Category)throws -> Future<CategoryResponseBody> {
         
-        // Get the value of the `name` key from the request's body.
-        let name = request.content.get(String.self, at: "name")
-        
-        // Create a new category with the name from the request, save the category to the database, and convert it to a `CategoryResponseBody`.
-        return name.map(to: Category.self, { Category(name: $0) }).save(on: request).response(on: request)
+        // Get the category decoded from the request, save the category to the database, and convert it to a `CategoryResponseBody`.
+        return category.save(on: request).response(on: request)
     }
     
     /// Get all `Category` models from the database.

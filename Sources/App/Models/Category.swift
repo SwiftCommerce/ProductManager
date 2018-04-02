@@ -4,11 +4,18 @@ final class Category: Content, MySQLModel, Migration, Parameter {
     /// The database ID of the model.
     var id: Int?
     
+    /// How high in a list of categories
+    /// this instance should appear.
+    var sort: Int
+    
     /// The name of the category.
     let name: String
     
     ///
-    init(name: String) { self.name = name }
+    init(name: String, sort: Int) {
+        self.name = name
+        self.sort = sort
+    }
     
     /// Gets all the categories translations.
     ///

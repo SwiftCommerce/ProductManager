@@ -44,6 +44,9 @@ struct CategoryResponseBody: Content {
     let name: String
     
     ///
+    let sort: Int
+    
+    ///
     let subcategories: [CategoryResponseBody]
     
     ///
@@ -83,6 +86,7 @@ extension Promise where T == CategoryResponseBody {
                 return CategoryResponseBody(
                     id: category.id,
                     name: category.name,
+                    sort: category.sort,
                     subcategories: subCategories,
                     translations: translations.map({ TranslationResponseBody($0, price: nil) })
                 )

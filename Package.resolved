@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/vapor/core.git",
         "state": {
           "branch": null,
-          "revision": "70719b347f2ee7880776d5b03add924628eac3d2",
-          "version": "3.0.0-rc.2.5.2"
+          "revision": "5f6e98e5849314ead2a3434f02521a220b273942",
+          "version": "3.0.0"
         }
       },
       {
@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/vapor/engine.git",
         "state": {
           "branch": null,
-          "revision": "cd6756a971caba5f14a861b446fe682a15d2ae28",
-          "version": "3.0.0-rc.2.1"
+          "revision": "4846ea9abeb04863f82f618ee8cb22650a82ae3c",
+          "version": "3.0.0-rc.2.1.1"
         }
       },
       {

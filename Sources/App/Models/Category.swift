@@ -63,7 +63,7 @@ extension Promise where T == CategoryResponseBody {
     ///   - category: The category model to get the information to populate the struct with.
     ///   - executor: The object to use to run the queries that will fetch the models connected to the category.
     /// - returns: A `CategoryResponseBody` populated with data from the category passed in, wrapped in a `Promise`.
-    init(category: Category, on request: Request) {
+    init(category: Category, on request: Request, failingOn fetched: [Category.ID] = []) {
         
         // Create a new promise from the request's event loop.
         // We don't assign to self yet because we can't call `.succeed` on `self`.
@@ -76,7 +76,17 @@ extension Promise where T == CategoryResponseBody {
             let categories = try category.subCategories.query(on: request).sort(\.sort, .ascending).all().flatMap(to: [CategoryResponseBody].self) { (categories) in
                 
                 // Convert the sub-categories to `CategoryResponseBody`s.
-                return categories.map({ Promise(category: $0, on: request).futureResult }).flatten(on: request)
+                return try categories.map({ child -> Future<CategoryResponseBody> in
+                    
+                    // Verify the the category has not been fetched in the same branch before.
+                    // If it has, abort. We found a recursive pivot.
+                    let id = try child.requireID()
+                    guard fetched.contains(id) else {
+                        throw Abort(.internalServerError, reason: "Found recursive category/category pivot with id '\(id)'")
+                    }
+                    
+                    return Promise(category: child, on: request, failingOn: fetched + [id]).futureResult
+                }).flatten(on: request)
             }
             
             // Get the sub-categories and translations, convert them to a `CategoryResponseBody`, and assign self.

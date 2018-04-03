@@ -48,14 +48,23 @@ extension Category {
     /// - Returns: A future which succedes with `Void` when the pivot is created.
     /// - Throws: Errors that occur when querying the current pivots or creating the new pivot.
     func attachWithoutDuplication(_ category: Category, on executor: DatabaseConnectable)throws -> Future<Void> {
+        
+        // Create the pivot that will be save if the category IDs are valid.
         let pivot = try CategoryPivot(self, category)
-        let leftCount = try CategoryPivot.query(on: executor).filter(\.left == self.id).count()
-        let rightCount = try CategoryPivot.query(on: executor).filter(\.right == self.id).count()
+        
+        // Get the number of pivots that the current category is already connected to.
+        let leftCount = try CategoryPivot.query(on: executor).filter(\.left == self.id).filter(\.right == category.id).count()
+        let rightCount = try CategoryPivot.query(on: executor).filter(\.right == self.id).filter(\.left == category.id).count()
         
         return flatMap(to: Void.self, leftCount, rightCount) { (left, right) in
             guard left < 1 && right < 1 else {
+                
+                // The current category and the one passed in are already connected.
+                // Exit to prevent a recursive or duplicate pivot from being created.
                 return executor.eventLoop.newSucceededFuture(result: ())
             }
+            
+            // Save the pivot to the database.
             return pivot.save(on: executor).transform(to: ())
         }
     }

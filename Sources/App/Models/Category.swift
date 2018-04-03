@@ -81,8 +81,8 @@ extension Promise where T == CategoryResponseBody {
                     // Verify the the category has not been fetched in the same branch before.
                     // If it has, abort. We found a recursive pivot.
                     let id = try child.requireID()
-                    guard fetched.contains(id) else {
-                        throw Abort(.internalServerError, reason: "Found recursive category/category pivot with id '\(id)'")
+                    guard !fetched.contains(id) else {
+                        throw Abort(.internalServerError, reason: "Found recursive category/category pivot containing category with id '\(id)'")
                     }
                     
                     return Promise(category: child, on: request, failingOn: fetched + [id]).futureResult

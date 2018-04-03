@@ -8,13 +8,18 @@ final class Category: Content, MySQLModel, Migration, Parameter {
     /// this instance should appear.
     var sort: Int
     
+    /// A flag that declares the category being
+    /// a top-level category and not a sub-category.
+    var isMain: Bool
+    
     /// The name of the category.
     let name: String
     
     ///
-    init(name: String, sort: Int) {
+    init(name: String, sort: Int, isMain: Bool) {
         self.name = name
         self.sort = sort
+        self.isMain = isMain
     }
     
     /// Gets all the categories translations.

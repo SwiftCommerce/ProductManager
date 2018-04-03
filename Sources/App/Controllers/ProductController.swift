@@ -160,16 +160,14 @@ final class ProductController: RouteCollection {
         let categoryIDs = try request.query.get([Category.ID].self, at: "category_ids")
         let futureCategories = try Category.query(on: request).filter(\.id ~~ categoryIDs).sort(\.sort, .ascending).all()
         
-        
-        return futureCategories.flatMap(to: [[Product]].self) { (categories) in
+        return futureCategories.each(to: [Product].self) { (category) in
             
             // Get all the `Product` models that are connected to the categories.
-            try categories.map({ (category) in
-                return try category.products.query(on: request).all()
-            }).flatten(on: request)
+            return try category.products.query(on: request).all()
+        }
             
         // Flatten the 2D array to products to a 1D array.
-        }.map(to: [Product].self) { $0.flatMap({ $0 }) }
+        .map(to: [Product].self) { $0.flatMap({ $0 }) }
             
         // Convert each prodcut to a `ProductResponseBody` object.
         .each(to: ProductResponseBody.self) { (product) in

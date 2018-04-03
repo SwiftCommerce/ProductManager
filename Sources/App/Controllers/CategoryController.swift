@@ -54,10 +54,10 @@ final class CategoryController: RouteCollection {
     func index(_ request: Request)throws -> Future<[CategoryResponseBody]> {
         
         // Fetch all categories from the database.
-        return try Category.query(on: request).sort(\.sort, .ascending).all().flatMap(to: [CategoryResponseBody].self, { (categories) in
+        return try Category.query(on: request).sort(\.sort, .ascending).all().each(to: CategoryResponseBody.self, transform: { (category) in
             
             // Convert all categories to `CategoryResponseBody`s and return them.
-            categories.map({ Promise(category: $0, on: request).futureResult }).flatten(on: request)
+            return Promise(category: category, on: request).futureResult
         })
     }
     

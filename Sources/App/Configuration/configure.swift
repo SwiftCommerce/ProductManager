@@ -35,16 +35,6 @@ public func configure(
         databases.enableLogging(on: .mysql)
     }
     
-    // We use the `database` var localy, but Vapor Cloud uses `DATABASE_DB`.
-    let databaseName: String
-    if let name = Environment.get("database") {
-        databaseName = name
-    } else if let name =  Environment.get("DATABASE_DB") {
-        databaseName = name
-    } else {
-        throw Abort.init(.failedDependency, reason: "Missing environment variable `database`.")
-    }
-    
     // Configure the MySQL Database.
     // If we are in Vapor Cloud, we use the available env vars,
     // otherwise we use the values for local development
@@ -53,7 +43,7 @@ public func configure(
         port: 3306,
         username: Environment.get("DATABASE_USER") ?? "root",
         password: Environment.get("DATABASE_PASSWORD") ?? "password",
-        database:  databaseName
+        database:  Environment.get("DATABASE_DB") ?? "product_manager"
     )
     databases.add(database: MySQLDatabase(config: config), as: .mysql)
 

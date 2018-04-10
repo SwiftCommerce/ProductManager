@@ -60,6 +60,8 @@ extension Translation {
 /// An implementation for the `Translation` protocol that a `Product` model connects to.
 final class ProductTranslation: Translation, TranslationRequestInitializable {
     
+    static let entity: String = "productTranslation"
+    
     /// The name of the translation.
     /// This property is used as the database identifier.
     var name: String?
@@ -119,6 +121,8 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
 
 /// An implementation for the `Translation` protocol that a `Category` model connects to.
 final class CategoryTranslation: Translation, TranslationRequestInitializable {
+    
+    static let entity: String = "categoryTranslation"
     
     /// The name of the translation.
     /// This property is used as the database identifier.

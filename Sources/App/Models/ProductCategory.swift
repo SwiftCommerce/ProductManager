@@ -5,6 +5,7 @@ final class ProductCategory: MySQLPivot, Migration {
     
     static var leftIDKey: WritableKeyPath<ProductCategory, Int> = \.productId
     static var rightIDKey: WritableKeyPath<ProductCategory, Int> = \.categoryId
+    static let entity: String = "productCategory"
     
     var productId: Product.ID
     var categoryId: Category.ID

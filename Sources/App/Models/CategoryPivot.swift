@@ -7,7 +7,7 @@ final class CategoryPivot: MySQLPivot, Migration {
     
     static var leftIDKey: WritableKeyPath<CategoryPivot, Int> = \.right
     static var rightIDKey: WritableKeyPath<CategoryPivot, Int> = \.left
-    static let entity: String = "categoryPivot"
+    static let entity: String = "categoryPivots"
     
     var id: Int?
     

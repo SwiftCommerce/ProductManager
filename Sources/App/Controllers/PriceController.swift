@@ -29,6 +29,9 @@ final class PriceController: RouteCollection {
         // The route will automaticlly decodes
         // the request body to a `PriceUpdateBody`
         prices.patch(PriceUpdateBody.self, at: Price.parameter, use: update)
+        
+        // Creates a DELETE route at `/prices/:price`.
+        prices.delete(Price.parameter, use: delete)
     }
     
     /// Takes a `Price` model decoded from a request
@@ -60,5 +63,12 @@ final class PriceController: RouteCollection {
             // Update the model's properties that have new values and save it.
             return price.update(with: content).save(on: request)
         }
+    }
+    
+    /// Deletes a `Price` model from the database with a given ID.
+    func delete(_ request: Request)throws -> Future<HTTPStatus> {
+        
+        // Find the model with the ID in the route paramaters, delete it, and return a 204 (No Content) status code.
+        return try request.parameter(Price.self).delete(on: request).transform(to: .noContent)
     }
 }

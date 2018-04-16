@@ -18,10 +18,22 @@ final class PriceController: RouteCollection {
         
         // Create a GET route at `/prices`
         prices.get(use: index)
+        
+        // Create a GET route at `/prices/:price`
+        prices.get(Price.parameter, use: show)
     }
     
     /// Gets all the `Price` models from the database
     func index(_ request: Request)throws -> Future<[Price]> {
         return Price.query(on: request).all()
+    }
+    
+    /// Gets a single `Price` model from the database,
+    /// based on its ID
+    func show(_ request: Request)throws -> Future<Price> {
+        
+        // Gets the `Price` models ID from the route parameters
+        // and get the model with that ID from the database
+        return try request.parameter(Price.self)
     }
 }

@@ -19,3 +19,9 @@ final class ProductPrice: MySQLPivot, Migration {
         self.priceID = try price.requireID()
     }
 }
+
+extension Product {
+    var prices: Siblings<Product, Price, ProductPrice> {
+        return siblings()
+    }
+}

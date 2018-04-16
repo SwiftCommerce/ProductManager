@@ -179,7 +179,7 @@ final class CategoryTranslation: Translation, TranslationRequestInitializable {
 protocol TranslationRequestInitializable {
     
     ///
-    static func create(from content: TranslationRequestContent, with request: Request) -> Future<Self>
+    static func create(from content: TranslationRequestContent, with request: Request)throws -> Future<Self>
 }
 
 /// A representation of a request body, used to create a translation type.

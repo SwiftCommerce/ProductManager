@@ -112,7 +112,7 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
     func create(_ request: Request, _ body: TranslationRequestContent)throws -> Future<TranslationResponseBody> {
         
         // Create a new `Translation` with the request and its body.
-        return Translation.create(from: body, with: request).response(on: request)
+        return try Translation.create(from: body, with: request).response(on: request)
     }
     
     /// Gets all the `Translation` models from the database.

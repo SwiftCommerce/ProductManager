@@ -60,7 +60,7 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
         
         // Create a `Translation` instance from the request's body,
         // save it to the database, and convert it to a `TranslationResponseBody`.
-        return Translation.create(from: content, with: request).save(on: request).response(on: request)
+        return try Translation.create(from: content, with: request).save(on: request).response(on: request)
     }
     
     /// Detach a `Translation` model from a `Parent` model.

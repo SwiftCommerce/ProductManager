@@ -79,15 +79,14 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     ///   - body: The body of a request, decoded to a `PriceUpdateBody`.
     ///   - executor: The object that will be used to save the model to the database.
     /// - Returns: A void future, which will signal once the update is complete.
-    func update(with body: PriceUpdateBody, on executor: DatabaseConnectable) -> Future<Void> {
+    func update(with body: PriceUpdateBody) -> Price {
         // Update all the properties if a value for it is found in the body, else use the old value.
         self.price = body.price ?? self.price
         self.activeFrom = body.activeFrom ?? self.activeFrom
         self.activeTo = body.activeTo ?? self.activeTo
         self.active = body.active ?? self.active
         
-        // Update the model in the database.
-        return self.save(on: executor).transform(to: ())
+        return self
     }
 }
 

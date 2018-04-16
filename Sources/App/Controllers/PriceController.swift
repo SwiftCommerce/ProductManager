@@ -24,6 +24,11 @@ final class PriceController: RouteCollection {
         
         // Create a GET route at `/prices/:price`
         prices.get(Price.parameter, use: show)
+        
+        // Creates a PATCH route at `/prices.:price`.
+        // The route will automaticlly decodes
+        // the request body to a `PriceUpdateBody`
+        prices.patch(PriceUpdateBody.self, at: Price.parameter, use: update)
     }
     
     /// Takes a `Price` model decoded from a request
@@ -44,5 +49,16 @@ final class PriceController: RouteCollection {
         // Gets the `Price` models ID from the route parameters
         // and get the model with that ID from the database
         return try request.parameter(Price.self)
+    }
+    
+    /// Updates tha values of a `Price` model that are found in the request body.
+    func update(_ request: Request, _ content: PriceUpdateBody)throws -> Future<Price> {
+        
+        // Gets the `Price` with the ID that is in the route's parameters
+        return try request.parameter(Price.self).flatMap(to: Price.self) { price in
+            
+            // Update the model's properties that have new values and save it.
+            return price.update(with: content).save(on: request)
+        }
     }
 }

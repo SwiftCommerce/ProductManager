@@ -45,7 +45,7 @@ extension Translation {
 // MARK: - Implementations
 
 /// An implementation for the `Translation` protocol that a `Product` model connects to.
-final class ProductTranslation: Translation, TranslationRequestInitializable {
+final class ProductTranslation: Translation {
     
     static let entity: String = "productTranslations"
     
@@ -69,23 +69,10 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
         self.languageCode = languageCode
         self.parentID = parentID
     }
-    
-    /// Creates a `ProductTranslation` from a `TranslationRequestContent`,
-    /// saves it to the database, and converts it to a `TranslationResponseBody`.
-    ///
-    /// - Parameters:
-    ///   - content: A `TranslationRequestContent`, created from a request's body.
-    ///   - request: The request that the body when fetched from.
-    /// - Returns: A `TranslationResponseBody`, wrapped in a future.
-    static func create(from content: TranslationRequestContent, with request: Request)throws -> Future<ProductTranslation> {
-            
-        // Create a new `ProductTranslation`, save it to the database, and convert it to a `TranslationResponseBody`.
-        return ProductTranslation(name: content.name, description: content.description, languageCode: content.languageCode, parentID: content.parentID).save(on: request)
-    }
 }
 
 /// An implementation for the `Translation` protocol that a `Category` model connects to.
-final class CategoryTranslation: Translation, TranslationRequestInitializable {
+final class CategoryTranslation: Translation {
     
     static let entity: String = "categoryTranslations"
     
@@ -109,51 +96,9 @@ final class CategoryTranslation: Translation, TranslationRequestInitializable {
         self.languageCode = languageCode
         self.parentID = parentID
     }
-    
-    /// Creates a `CategoryTranslation` from a `TranslationRequestContent`,
-    /// saves it to the database, and converts it to a `TranslationResponseBody`.
-    ///
-    /// - Parameters:
-    ///   - content: A `TranslationRequestContent`, created from a request's body.
-    ///   - request: The request that the body when fetched from.
-    /// - Returns: A `TranslationResponseBody`, wrapped in a future.
-    static func create(from content: TranslationRequestContent, with request: Request) -> Future<CategoryTranslation> {
-        
-        // Create a `CategoryTranslation`, save it to the database, ans convert it to a `TranslationResponseBody`.
-        return CategoryTranslation(
-            name: content.name,
-            description: content.description,
-            languageCode: content.languageCode,
-            parentID: content.parentID
-        ).save(on: request)
-    }
 }
 
 // MARK: - Public
-
-/// Defines a type as being able to be created from a request body formatted as `TranslationRequestContent`
-/// and getting converted to a `TranslationResponseBody`
-protocol TranslationRequestInitializable {
-    
-    ///
-    static func create(from content: TranslationRequestContent, with request: Request)throws -> Future<Self>
-}
-
-/// A representation of a request body, used to create a translation type.
-struct TranslationRequestContent: Content {
-    
-    ///
-    let name: String
-    
-    ///
-    let description: String
-    
-    ///
-    let languageCode: String
-    
-    ///
-    let parentID: Int
-}
 
 /// A representation of a translation type that gets returned from a route handler.
 struct TranslationResponseBody: Content {

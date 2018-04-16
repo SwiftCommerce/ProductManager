@@ -40,7 +40,7 @@ final class TranslationController: RouteCollection {
 ///
 /// - The `Translation` type must conform to `App.Translation` and `TranslationRequestInitializable`.
 /// - The `Parent` type must conform to `MySQLModel`.
-final class ModelTranslationController<Translation, Parent>: RouteCollection where Translation: App.Translation & TranslationRequestInitializable, Parent: MySQLModel {
+final class ModelTranslationController<Translation, Parent>: RouteCollection where Translation: App.Translation, Parent: MySQLModel {
     
     /// The top level path for all the controller's routes.
     let root: String
@@ -67,7 +67,7 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
         
         // Registers a POST route at `/<root>/translations` with the router.
         // This route automatically decodes the request body to a `TranslationRequestContent` object.
-        translations.post(TranslationRequestContent.self, use: create)
+        translations.post(Translation.self, use: create)
         
         // Registers a GET route at `/<root>/translations` with the router.
         translations.get(use: index)
@@ -84,10 +84,10 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
     }
     
     /// Creates a new `Translation` model and saves it to the database.
-    func create(_ request: Request, _ body: TranslationRequestContent)throws -> Future<TranslationResponseBody> {
+    func create(_ request: Request, _ translation: Translation)throws -> Future<TranslationResponseBody> {
         
         // Create a new `Translation` with the request and its body.
-        return try Translation.create(from: body, with: request).response(on: request)
+        return translation.save(on: request).response(on: request)
     }
     
     /// Gets all the `Translation` models from the database.

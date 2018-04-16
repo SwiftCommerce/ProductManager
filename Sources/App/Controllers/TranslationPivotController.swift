@@ -12,7 +12,7 @@ typealias CategoryTranslationController = TranslationPivotController<Category, C
 /// - The `Parent.ResolvedParameter` type must be equal to `Future<Parent>`.
 /// - The `Translation` type must be equal to `Parent.Translation` and conform to `TranslationRequestInitializable`.
 final class TranslationPivotController<Parent, Translation>: RouteCollection
-where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParameter == Future<Parent>, Translation == Parent.Translation, Translation: TranslationRequestInitializable {
+where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParameter == Future<Parent>, Translation == Parent.Translation {
     
     /// The root path element of the router group for the controller instance.
     let root: String
@@ -33,7 +33,7 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
         translations.get(use: index)
         
         // Registers a POST route at `/` with the router.
-        translations.post(TranslationRequestContent.self, at: self.root, "translations", use: add)
+        translations.post(Translation.self, at: self.root, "translations", use: add)
         
         // Registers a DELETE route at /:tranalation` with the router.
         translations.delete(Translation.parameter, use: remove)
@@ -56,11 +56,11 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
     }
     
     /// Add a new `Translation` model with a given name to a `Product` model.
-    func add(_ request: Request, _ content: TranslationRequestContent)throws -> Future<TranslationResponseBody> {
+    func add(_ request: Request, _ translation: Translation)throws -> Future<TranslationResponseBody> {
         
         // Create a `Translation` instance from the request's body,
         // save it to the database, and convert it to a `TranslationResponseBody`.
-        return try Translation.create(from: content, with: request).save(on: request).response(on: request)
+        return translation.save(on: request).response(on: request)
     }
     
     /// Detach a `Translation` model from a `Parent` model.

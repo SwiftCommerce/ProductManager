@@ -49,6 +49,13 @@ extension Product {
             }
         }
         
+        // Try to get the `status` query string from the request.
+        if let status = try request.query.get(ProductStatus?.self, at: "status") {
+            
+            // A `status` value was found. Add a filter to the quesy that gets all models with that status.
+            query = query.map(to: QueryBuilder<Product, Product>.self) { try $0.filter(\Product.status == status) }
+        }
+        
         return query.flatMap(to: [Product].self) { (query) in
             
             // If query parameters where passed in for pagination, limit the amount of models we fetch.

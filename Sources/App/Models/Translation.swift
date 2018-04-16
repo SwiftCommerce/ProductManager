@@ -96,9 +96,12 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
     ///   - request: The request that the body when fetched from.
     /// - Returns: A `TranslationResponseBody`, wrapped in a future.
     static func create(from content: TranslationRequestContent, with request: Request)throws -> Future<ProductTranslation> {
-        // Verify that a `price` value was passed into the request body.
-        guard let amount = content.price else {
-            return Future.map(on: request, { throw Abort(.badRequest, reason: "Request body must contain 'price' key") })
+        // Verify that `price` and `currency` values are in the request body.
+        guard
+            let amount = content.price,
+            let currency = content.currency
+        else {
+            return Future.map(on: request, { throw Abort(.badRequest, reason: "Request body must contain 'price' and 'currency' values") })
         }
         
         // Create a new `Price` model.
@@ -108,7 +111,7 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
             content.priceActiveFrom,
             activeTo: content.priceActiveTo,
             active: content.priceActive,
-            currency: content.currency,
+            currency: currency,
             translationName: content.name
         )
         
@@ -207,7 +210,7 @@ struct TranslationRequestContent: Content {
     let priceActive: Bool?
     
     ///
-    let currency: String
+    let currency: String?
     
     ///
     let parentID: Int

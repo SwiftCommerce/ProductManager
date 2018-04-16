@@ -1,7 +1,7 @@
 import FluentMySQL
 
 /// Connects a `Product` model to a `Price` model using their IDs.
-final class ProductPrice: MySQLPivot {
+final class ProductPrice: MySQLPivot, Migration {
     typealias Left = Product
     typealias Right = Price
     

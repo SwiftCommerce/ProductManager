@@ -54,6 +54,7 @@ public func configure(
     migrations.add(model: Product.self, database: .mysql)
     migrations.add(model: Price.self, database: .mysql)
     migrations.add(model: Attribute.self, database: .mysql)
+    migrations.add(model: ProductPrice.self, database: .mysql)
     migrations.add(model: CategoryPivot.self, database: .mysql)
     migrations.add(model: ProductCategory.self, database: .mysql)
     migrations.add(model: ProductTranslation.self, database: .mysql)

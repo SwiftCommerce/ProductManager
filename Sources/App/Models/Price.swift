@@ -1,4 +1,5 @@
 import Foundation
+import Vapor
 
 /// The price for a product.
 /// A price is connected to a translations because you need to
@@ -21,6 +22,9 @@ final class Price: Content, MySQLModel, Migration {
     /// Wheather or not the price is the current price of the product.
     var active: Bool
     
+    /// The currency used for the price, i.e. EUR, USD, GBR.
+    var currency: String
+    
     /// The name of the trsnlation that owns the model.
     /// This allows easy querying on the trnslations side to get related prices:
     ///
@@ -37,7 +41,11 @@ final class Price: Content, MySQLModel, Migration {
     ///   - activeTo: The date the price becomes invalid. If you pass in `nil`, it defaults to some time in the distant future (`Date.distantFuture`).
     ///   - active: Wheather or not the price is valid. If you pass in `nil`, the value is calculated of the `activeFrom` and `activeTo` dates.
     ///   - translationName: The name of the translation that owns the price.
-    init(price: Float, activeFrom: Date?, activeTo: Date?, active: Bool?, translationName: ProductTranslation.ID) {
+    init(price: Float, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String, translationName: ProductTranslation.ID)throws {
+        guard currency.count == 3 else {
+            throw Abort(.badRequest, reason: "'currency' field must contain 3 characters. Found \(currency.count)")
+        }
+        
         let af = activeFrom ?? Date()
         let at: Date = activeTo ?? Date.distantFuture
         
@@ -46,6 +54,7 @@ final class Price: Content, MySQLModel, Migration {
         self.activeTo = at
         self.active = active ?? (Date() > af && Date() < at)
         self.translationName = translationName
+        self.currency = currency.uppercased()
     }
     
     // We have a custom decoding init so we can have the same default values as the ones in the main init.
@@ -56,6 +65,7 @@ final class Price: Content, MySQLModel, Migration {
             activeFrom: container.decodeIfPresent(Date.self, forKey: .activeFrom),
             activeTo: container.decodeIfPresent(Date.self, forKey: .activeTo),
             active: container.decodeIfPresent(Bool.self, forKey: .active),
+            currency: container.decode(String.self, forKey: .currency),
             translationName: container.decode(ProductTranslation.ID.self, forKey: .translationName)
         )
         

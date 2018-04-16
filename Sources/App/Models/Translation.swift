@@ -95,14 +95,22 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
     ///   - content: A `TranslationRequestContent`, created from a request's body.
     ///   - request: The request that the body when fetched from.
     /// - Returns: A `TranslationResponseBody`, wrapped in a future.
-    static func create(from content: TranslationRequestContent, with request: Request) -> Future<ProductTranslation> {
+    static func create(from content: TranslationRequestContent, with request: Request)throws -> Future<ProductTranslation> {
         // Verify that a `price` value was passed into the request body.
         guard let amount = content.price else {
             return Future.map(on: request, { throw Abort(.badRequest, reason: "Request body must contain 'price' key") })
         }
         
         // Create a new `Price` model.
-        let price = Price(price: amount, activeFrom: content.priceActiveFrom, activeTo: content.priceActiveTo, active: content.priceActive, translationName: content.name)
+        let price = try Price(
+            price: amount,
+            activeFrom:
+            content.priceActiveFrom,
+            activeTo: content.priceActiveTo,
+            active: content.priceActive,
+            currency: content.currency,
+            translationName: content.name
+        )
         
         // Save the price to the database, and return the result of the future's callback.
         return price.save(on: request).flatMap(to: ProductTranslation.self) { (price) in
@@ -197,6 +205,9 @@ struct TranslationRequestContent: Content {
     
     ///
     let priceActive: Bool?
+    
+    ///
+    let currency: String
     
     ///
     let parentID: Int

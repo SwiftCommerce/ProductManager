@@ -205,6 +205,9 @@ final class ProductController: RouteCollection {
         let detachCategories = Category.query(on: request).models(where: \Category.id, in: body.categories?.detach)
         let attachCategories = Category.query(on: request).models(where: \Category.id, in: body.categories?.attach)
         
+        let detachPrices = Price.query(on: request).models(where: \Price.id, in: body.prices?.detach)
+        let attachPrices = Price.query(on: request).models(where: \Price.id, in: body.prices?.attach)
+        
         // Attach and detach the models fetched with the ID arrays.
         // This means we either create or delete a row in a pivot table.
         let attributes = Async.flatMap(to: Void.self, product, detachAttributes, attachAttributes) { (product, detach, attach) in
@@ -214,19 +217,24 @@ final class ProductController: RouteCollection {
             // This syntax allows you to complete the current future
             // when both of the futures in the array are complete.
             return [detached, attached].flatten(on: request)
-        }
-        
+        }.transform(to: ())
         
         let categories = Async.flatMap(to: Void.self, product, detachCategories, attachCategories) { (product, detach, attach) in
             let detached = detach.map({ product.categories.detach($0, on: request) }).flatten(on: request)
             let attached = try attach.map({ try ProductCategory(product: product, category: $0).save(on: request) }).flatten(on: request).transform(to: ())
             return [detached, attached].flatten(on: request)
-        }
+        }.transform(to: ())
+        
+        let prices = Async.flatMap(to: Void.self, product, detachPrices, attachPrices) { (product, detach, attach) in
+            let detached = detach.map({ product.prices.detach($0, on: request) }).flatten(on: request)
+            let attached = try attach.map({ try ProductPrice(product: product, price: $0).save(on: request) }).flatten(on: request).transform(to: ())
+            return [detached, attached].flatten(on: request)
+        }.transform(to: ())
         
         // Once all the attaching/detaching is complete, convert the updated model to a `ProductResponseBody` and return it.
-        return Async.flatMap(to: ProductResponseBody.self, attributes, categories, { _, _ in
+        return [attributes, categories, prices].flatten(on: request).flatMap(to: ProductResponseBody.self) {
             return product.response(on: request)
-        })
+        }
     }
     
     // Deletes a `Product` model from that database and returns an HTTP status.

@@ -103,7 +103,7 @@ extension Promise where T == CategoryResponseBody {
                     name: category.name,
                     sort: category.sort,
                     subcategories: subCategories,
-                    translations: translations.map({ TranslationResponseBody($0, price: nil) })
+                    translations: translations.map({ TranslationResponseBody($0) })
                 )
             }.do { (body) in
                 

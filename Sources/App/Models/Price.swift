@@ -27,12 +27,6 @@ final class Price: Content, MySQLModel, Migration {
     /// The currency used for the price, i.e. EUR, USD, GBR.
     var currency: String
     
-    /// The name of the trsnlation that owns the model.
-    /// This allows easy querying on the trnslations side to get related prices:
-    ///
-    ///     SELECT ... WHERE trnslationName == name
-    let translationName: ProductTranslation.ID
-    
     
     /// Creates a new `Price` model from given data.
     /// Make sure you call `.save` on it to store it in the database.
@@ -43,7 +37,7 @@ final class Price: Content, MySQLModel, Migration {
     ///   - activeTo: The date the price becomes invalid. If you pass in `nil`, it defaults to some time in the distant future (`Date.distantFuture`).
     ///   - active: Wheather or not the price is valid. If you pass in `nil`, the value is calculated of the `activeFrom` and `activeTo` dates.
     ///   - translationName: The name of the translation that owns the price.
-    init(price: Float, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String, translationName: ProductTranslation.ID)throws {
+    init(price: Float, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
         guard
             (currency.count == 3 && currency.replacingOccurrences(of: "\\d", with: "$1", options: .regularExpression) == currency) ||
             (currency == "1" || currency == "0")
@@ -58,7 +52,6 @@ final class Price: Content, MySQLModel, Migration {
         self.activeFrom = af
         self.activeTo = at
         self.active = active ?? (Date() > af && Date() < at)
-        self.translationName = translationName
         self.currency = currency.uppercased()
     }
     
@@ -70,8 +63,7 @@ final class Price: Content, MySQLModel, Migration {
             activeFrom: container.decodeIfPresent(Date.self, forKey: .activeFrom),
             activeTo: container.decodeIfPresent(Date.self, forKey: .activeTo),
             active: container.decodeIfPresent(Bool.self, forKey: .active),
-            currency: container.decode(String.self, forKey: .currency),
-            translationName: container.decode(ProductTranslation.ID.self, forKey: .translationName)
+            currency: container.decode(String.self, forKey: .currency)
         )
         
         // This init method is used by Fluent to initailize an instance of the class,

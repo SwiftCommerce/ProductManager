@@ -38,20 +38,7 @@ extension Translation {
     /// - Parameter executor: The object used to get models connected to the current translation.
     /// - Returns: A `TranslationResponseBody`, wrapped in a future.
     func response(on request: Request) -> Future<TranslationResponseBody> {
-        /// Get the price connected to the current translation if it is a `ProductTranslation`.
-        /// Otherwise, set it to `nil`
-        let price: Future<Price?> = Future.flatMap(on: request, {
-            if let productTranslation = self as? ProductTranslation, let id = productTranslation.priceId {
-                return try Price.find(id, on: request)
-            } else {
-                return Future.map(on: request, { nil })
-            }
-        })
-        
-        /// Create a new `ProductTranslation` with the fetched `Price` model and the current translation model.
-        return price.map(to: TranslationResponseBody.self, { (price) in
-            return TranslationResponseBody(self, price: price)
-        })
+        return Future.map(on: request) { return TranslationResponseBody(self) }
     }
 }
 
@@ -72,19 +59,14 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
     /// The code of the language the translation is in.
     var languageCode: String
     
-    /// The database ID of the `Price` model for the product in the region
-    /// that the translation is used for.
-    var priceId: Price.ID?
-    
     /// The ID of the `Product` model that owns the translation.
     let parentID: Product.ID
     
     ///
-    init(name: String, description: String, languageCode: String, priceId: Price.ID?, parentID: Product.ID) {
+    init(name: String, description: String, languageCode: String, parentID: Product.ID) {
         self.name = name
         self.description = description
         self.languageCode = languageCode
-        self.priceId = priceId
         self.parentID = parentID
     }
     
@@ -96,37 +78,9 @@ final class ProductTranslation: Translation, TranslationRequestInitializable {
     ///   - request: The request that the body when fetched from.
     /// - Returns: A `TranslationResponseBody`, wrapped in a future.
     static func create(from content: TranslationRequestContent, with request: Request)throws -> Future<ProductTranslation> {
-        // Verify that `price` and `currency` values are in the request body.
-        guard
-            let amount = content.price,
-            let currency = content.currency
-        else {
-            return Future.map(on: request, { throw Abort(.badRequest, reason: "Request body must contain 'price' and 'currency' values") })
-        }
-        
-        // Create a new `Price` model.
-        let price = try Price(
-            price: amount,
-            activeFrom:
-            content.priceActiveFrom,
-            activeTo: content.priceActiveTo,
-            active: content.priceActive,
-            currency: currency,
-            translationName: content.name
-        )
-        
-        // Save the price to the database, and return the result of the future's callback.
-        return price.save(on: request).flatMap(to: ProductTranslation.self) { (price) in
             
-            // Create a new `ProductTranslation`, save it to the database, and convert it to a `TranslationResponseBody`.
-            return try ProductTranslation(
-                name: content.name,
-                description: content.description,
-                languageCode: content.languageCode,
-                priceId: price.requireID(), parentID:
-                content.parentID
-            ).save(on: request)
-        }
+        // Create a new `ProductTranslation`, save it to the database, and convert it to a `TranslationResponseBody`.
+        return ProductTranslation(name: content.name, description: content.description, languageCode: content.languageCode, parentID: content.parentID).save(on: request)
     }
 }
 
@@ -198,21 +152,6 @@ struct TranslationRequestContent: Content {
     let languageCode: String
     
     ///
-    let price: Float?
-    
-    ///
-    let priceActiveFrom: Date?
-    
-    ///
-    let priceActiveTo: Date?
-    
-    ///
-    let priceActive: Bool?
-    
-    ///
-    let currency: String?
-    
-    ///
     let parentID: Int
 }
 
@@ -228,19 +167,11 @@ struct TranslationResponseBody: Content {
     /// The language code for the translation.
     let languageCode: String
     
-    /// If the translation is a `ProductTranslation`,
-    /// this is the trenslation's connected `Price` model.
-    let price: Price?
-    
     /// Creates a `TranslationResponseBody` from an object that conforms to `Translation`
     /// and a price (only used if the `translation` parameter type is `ProductTranslation`).
-    init<Tran>(_ translation: Tran, price: Price?) where Tran: Translation {
+    init<Tran>(_ translation: Tran) where Tran: Translation {
         self.name = translation.name
         self.description = translation.description
         self.languageCode = translation.languageCode
-        
-        if translation as? ProductTranslation != nil {
-            self.price = price
-        } else { self.price = nil }
     }
 }

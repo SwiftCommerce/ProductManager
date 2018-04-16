@@ -33,31 +33,6 @@ final class TranslationController: RouteCollection {
         
         // Register the routes in `ModelTranslationController<ProductTranslation, Product>` with a root path of `products`.
         try router.register(collection: ModelTranslationController<ProductTranslation, Product>(root: "products"))
-        
-        // Registers a PATCH route at `/products/translations/:product_translation/price` with the router.
-        // This route automatically decodes the request's body to a `PriceUpdateBody` instance.
-        router.patch(PriceUpdateBody.self, at: "products", "translations", ProductTranslation.parameter, "price", use: updatePrice)
-    }
-    
-    /// Updates the data of the `Price` model connected to a `ProdcutTranslation`.
-    /// We place this handler in the `TranslationController` because we only want one route with this action.
-    func updatePrice(_ request: Request, _ body: PriceUpdateBody)throws -> Future<Price> {
-        
-        // Get the translation model from the route's parameters.
-        return try request.parameter(ProductTranslation.self).flatMap(to: Price.self, { (translation) in
-            
-            // Verfiy that the translation has a price ID.
-            guard let price = translation.priceId else {
-                throw Abort(.notFound, reason: "The given translation does not have a price conected to it")
-            }
-            
-            // Get the `Price` model with the ID from the translation.
-            return try Price.query(on: request).filter(\.id == price).first().unwrap(or: Abort(.internalServerError, reason: "Bad price ID connected to translation"))
-        }).flatMap(to: Price.self, { (price) in
-            
-            // Updated the `Prioce` model's data and return the object.
-            return price.update(with: body, on: request).transform(to: price)
-        })
     }
 }
 
@@ -143,11 +118,6 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
             translation.languageCode = body.languageCode ?? translation.languageCode
             translation.description = body.description ?? translation.description
             
-            // If the model we are updating is a `ProductTranslation`, update its `priceId` property.
-            if let productTranslation = translation as? ProductTranslation {
-                productTranslation.priceId = body.priceId            
-            }
-            
             // Save the updated model to the database and convert it to a `TranslationResponseBody` object.
             return translation.save(on: request).response(on: request)
         })
@@ -156,28 +126,7 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
     /// Deletes a `Translation` model and its connections to other models.
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         
-        // Get the model from the route parameters
-        let translation = try request.parameter(Translation.self)
-        return translation.flatMap(to: Translation.self) { (translation) in
-            
-            // Place the resulting futures of deletions in this array,
-            // so we can call `.flatten` and know when all the futures have complete.
-            var deletions: [Future<Void>] = []
-            
-            // Delete the connections to the model's respective parent models.
-            // If the model is a `ProductTranslation` model, delete its connection to its `Price` model.
-            if let productTranslation = translation as? ProductTranslation {
-                if let price = productTranslation.priceId {
-                    try deletions.append(Price.query(on: request).filter(\.id == price).delete())
-                }
-            }
-            
-            // Once the connection deletions have complete, return the `Translation` model.
-            return deletions.flatten(on: request).transform(to: translation)
-        }.flatMap(to: HTTPStatus.self, { translation in
-            
-            // Delete the model and return HTTP status 204 (No Content).
-            return translation.delete(on: request).transform(to: .noContent)
-        })
+        // Get the model from the route parameters, delete the model, and return HTTP status 204 (No Content).
+        return try request.parameter(Translation.self).delete(on: request).transform(to: .noContent)
     }
 }

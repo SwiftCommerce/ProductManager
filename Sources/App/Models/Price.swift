@@ -7,7 +7,7 @@ let ints = "1234567890"
 /// A price is connected to a translations because you need to
 /// use different currencies for a single price.
 /// You also might want to do a region specific discount.
-final class Price: Content, MySQLModel, Migration {
+final class Price: Content, MySQLModel, Migration, Parameter {
     
     /// The database ID of the model.
     var id: Int?

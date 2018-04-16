@@ -1,6 +1,8 @@
 import Foundation
 import Vapor
 
+let ints = "1234567890"
+
 /// The price for a product.
 /// A price is connected to a translations because you need to
 /// use different currencies for a single price.
@@ -42,7 +44,10 @@ final class Price: Content, MySQLModel, Migration {
     ///   - active: Wheather or not the price is valid. If you pass in `nil`, the value is calculated of the `activeFrom` and `activeTo` dates.
     ///   - translationName: The name of the translation that owns the price.
     init(price: Float, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String, translationName: ProductTranslation.ID)throws {
-        guard currency.count == 3 else {
+        guard
+            (currency.count == 3 && currency.replacingOccurrences(of: "\\d", with: "$1", options: .regularExpression) == currency) ||
+            (currency == "1" || currency == "0")
+        else {
             throw Abort(.badRequest, reason: "'currency' field must contain 3 characters. Found \(currency.count)")
         }
         
@@ -69,7 +74,7 @@ final class Price: Content, MySQLModel, Migration {
             translationName: container.decode(ProductTranslation.ID.self, forKey: .translationName)
         )
         
-        // This init mwthod is used by Fluent to initailize an instance of the class,
+        // This init method is used by Fluent to initailize an instance of the class,
         // so we need to assign all properties.
         // This method is also used by Fluent to create the tables in the datbase.
         self.id = try container.decodeIfPresent(Int.self, forKey: .id)

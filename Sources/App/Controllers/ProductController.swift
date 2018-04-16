@@ -21,14 +21,31 @@ struct ProductUpdateBody: Content {
         let delete: [Attribute.ID]?
     }
     
+    /// A wrapper type, allowing the request's body to have a nested strcuture:
+    ///
+    ///     {
+    ///       "prices": {"attach": [], "detach": []}
+    ///     }
+    struct PricesUpdate: Content {
+        
+        /// The IDs of the `Price` model to attach to the `Product` model.
+        let attach: [Price.ID]?
+        
+        /// The IDs of the `Price` model to dettach from the `Product` model.
+        let detach: [Price.ID]?
+    }
+    
     /// A decoded JSON object to get the IDs of `Attribute` models
     /// to attach to and detach from the product.
     let attributes: AttributeUpdate?
     
-    
     /// A decoded JSON object to get the IDs of `Category` models
     /// to attach to and detach from the product.
     let categories: CategoryUpdateBody?
+    
+    /// A decoded JSON object to get the IDs of `Price` models
+    /// to attach to and detach from the product model.
+    let prices: PricesUpdate?
 }
 
 // MARK: - Controller

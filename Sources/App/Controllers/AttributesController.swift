@@ -51,7 +51,7 @@ final class AttributesController: RouteCollection {
             }
             
             // Create the new attribute, Save it to the database, and return it from the route.
-            return try Attribute(name: attribute.name, value: attribute.value, productID: parent.requireID()).save(on: request)
+            return try Attribute(name: attribute.name, type: attribute.value, productID: parent.requireID()).save(on: request)
         }
     }
     
@@ -92,7 +92,7 @@ final class AttributesController: RouteCollection {
         return flatMap(to: Product.self, product, newValue, { (product, newValue) in
             
             // Find the attribute connected to the product with the ID passed in, update its `value` property, and return the product.
-            return try product.attributes(on: request).filter(\Attribute.id == id).update(\Attribute.value, to: newValue).transform(to: product)
+            return try product.attributes(on: request).filter(\Attribute.id == id).update(\Attribute.type, to: newValue).transform(to: product)
         }).flatMap(to: Attribute.self, { product in
             
             // `QueryBuilder.update` returns `Future<Void>`, so to get the updated attribute, we need to run another query.

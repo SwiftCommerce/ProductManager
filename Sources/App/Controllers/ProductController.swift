@@ -150,7 +150,12 @@ final class ProductController: RouteCollection {
         // This means we either create or delete a row in a pivot table.
         let attributes = Async.flatMap(to: Void.self, product, detachAttributes, attachAttributes) { (product, detach, attach) in
             let detached = detach.map({ product.attributes.detach($0, on: request) }).flatten(on: request)
-            let attached = attach.map({ Attribute(name: $0.name, type: $0.value).save(on: request) }).flatten(on: request).transform(to: ())
+            
+            let attached = attach.map({ content in
+                Attribute(name: content.name, type: content.type).save(on: request).map(to: ProductAttribute.self) { attribute in
+                    return try ProductAttribute(value: content.value, language: content.language, product: product, attribute: attribute)
+                }.save(on: request)
+            }).flatten(on: request).transform(to: ())
             
             // This syntax allows you to complete the current future
             // when both of the futures in the array are complete.

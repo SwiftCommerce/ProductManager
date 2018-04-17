@@ -27,3 +27,11 @@ extension Product {
         return self.siblings()
     }
 }
+
+struct ProductAttributeResponse: Content {
+    let id: Attribute.ID
+    let name: String
+    let type: String
+    let value: String
+    let language: String
+}

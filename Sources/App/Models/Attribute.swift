@@ -24,4 +24,12 @@ struct AttributeContent: Content {
     let type: String
     let value: String
     let language: String
+    
+    init(attribute: Attribute, pivot: ProductAttribute) {
+        self.id = attribute.id
+        self.name = attribute.name
+        self.type = attribute.type
+        self.value = pivot.value
+        self.language = pivot.language
+    }
 }

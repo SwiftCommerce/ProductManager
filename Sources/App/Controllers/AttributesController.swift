@@ -34,25 +34,30 @@ final class AttributesController: RouteCollection {
     
     /// Creates a new `Attribute` model from a request and saves it to the database.
     /// This route handler requires the router to decode the request's body to an `Attribute` and pass the model in with the request.
-    func create(_ request: Request, _ attribute: AttributeContent)throws -> Future<Attribute> {
+    func create(_ request: Request, _ content: AttributeContent)throws -> Future<Attribute> {
         
         // Get the `Product` model from the route parameters.
         let parent = try request.parameter(Product.self)
         
         // Get the amount of attributes that already exist in the database with the name of the new attribute.
         let attributeCount = parent.flatMap(to: Int.self) { (product) in
-            return try Attribute.query(on: request).filter(\.name == attribute.name).count()
+            return try product.attributes.query(on: request).filter(\.name == content.name).count()
         }
         
-        return flatMap(to: Attribute.self, attributeCount, parent) { (attributeCount, parent) in
+        let attribute = flatMap(to: Attribute.self, attributeCount, parent) { (attributeCount, parent) in
             
             // Verify that there are less then one (0 or fewer) attributes already in the database with the name passed in.
             guard attributeCount < 1 else {
-                throw Abort(.badRequest, reason: "Attribute already exists for product with name '\(attribute.name)'")
+                throw Abort(.badRequest, reason: "Attribute already exists for product with name '\(content.name)'")
             }
             
             // Create the new attribute, Save it to the database, and return it from the route.
-            return try Attribute(name: attribute.name, type: attribute.value).save(on: request)
+            return Attribute(name: content.name, type: content.value).save(on: request)
+        }
+        
+        // Create a pivot between the parent product and the attribute, then return the attribute.
+        return Async.flatMap(to: Attribute.self, attribute, parent) { attribute, product in
+            return try ProductAttribute(value: content.value, language: content.language, product: product, attribute: attribute).save(on: request).transform(to: attribute)
         }
     }
     

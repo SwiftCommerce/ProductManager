@@ -98,7 +98,7 @@ struct ProductResponseBody: Content {
     let status: ProductStatus
     
     ///
-    let attributes: [Attribute]
+    let attributes: [AttributeContent]
     
     ///
     let translations: [TranslationResponseBody]
@@ -127,7 +127,7 @@ extension Promise where T == ProductResponseBody {
         do {
             
             // Get all the attributes connected to the product.
-            let attributes = try product.attributes.query(on: request).all()
+            let attributes = try product.attributes.response(on: request)
             
             // Get all `Price` models connected to the product.
             let prices = try product.prices.query(on: request).all()

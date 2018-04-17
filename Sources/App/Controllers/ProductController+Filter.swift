@@ -34,19 +34,22 @@ extension Product {
             // Run the raw query with the filter parameters
             let attributes = Attribute.raw("SELECT * FROM attributes WHERE \(filter)", with: parameters, on: request)
             
-            query = attributes.map(to: QueryBuilder<Product, Product>.self) { (attributes) in
+            query = attributes.flatMap(to: [ProductAttribute].self) { (attributes) in
+                
+                // Get all the pivot models that the attributes are connected to.
+                let ids = try attributes.map({ try $0.requireID() })
+                return try ProductAttribute.query(on: request).filter(\.attributeID ~~ ids).all()
+            }.map(to: QueryBuilder<Product, Product>.self) { pivots in
                 
                 // Group the attributes togeather by their `productID` property.
-                // TODO: - We had a `.group(by: \productID)` call here.
-                let keys = attributes.filter({ (attributes) -> Bool in
+                let keys = pivots.group(by: \.productID).filter { id, attributePivots in
                     
                     // If we have the same amount of filters as attributes, we have a match!
-//                    return attributes.count == filters.count
-                    return true
-                })/*.keys*/
+                    return attributePivots.count == filters.count
+                }.keys
                 
                 // Get all products that have the correct amount of attributes.
-                let ids = Array(keys) .map({ $0.id! })
+                let ids = Array(keys)
                 return try Product.query(on: request).filter(\.id ~~ ids)
             }
         }

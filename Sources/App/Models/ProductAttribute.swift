@@ -21,3 +21,9 @@ final class ProductAttribute: MySQLPivot, Migration {
         self.language = language
     }
 }
+
+extension Product {
+    var attributes: Siblings<Product, Attribute, ProductAttribute> {
+        return self.siblings()
+    }
+}

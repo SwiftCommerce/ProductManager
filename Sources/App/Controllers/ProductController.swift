@@ -149,7 +149,7 @@ final class ProductController: RouteCollection {
         // Attach and detach the models fetched with the ID arrays.
         // This means we either create or delete a row in a pivot table.
         let attributes = Async.flatMap(to: Void.self, product, detachAttributes, attachAttributes) { (product, detach, attach) in
-            let detached = try detach.map({ try product.attributes(on: request).detach($0, on: request) }).flatten(on: request)
+            let detached = detach.map({ product.attributes.detach($0, on: request) }).flatten(on: request)
             let attached = try attach.map({ try Attribute(name: $0.name, type: $0.value, productID: product.requireID()).save(on: request) }).flatten(on: request).transform(to: ())
             
             // This syntax allows you to complete the current future

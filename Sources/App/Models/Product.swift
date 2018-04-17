@@ -69,7 +69,7 @@ final class Product: Content, MySQLModel, Migration, Parameter {
             return try Async.flatMap(
                 to: Void.self,
                 self.categories.deleteConnections(on: request),
-                self.attributes(on: request).delete(),
+                self.attributes.query(on: request).delete(),
                 self.translations(on: request).delete()
             ) { _, _, _ in
                 
@@ -127,7 +127,7 @@ extension Promise where T == ProductResponseBody {
         do {
             
             // Get all the attributes connected to the product.
-            let attributes = try product.attributes(on: request).all()
+            let attributes = try product.attributes.query(on: request).all()
             
             // Get all `Price` models connected to the product.
             let prices = try product.prices.query(on: request).all()

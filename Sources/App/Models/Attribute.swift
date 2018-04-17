@@ -23,10 +23,8 @@ final class Attribute: Content, MySQLModel, Migration, Parameter {
 
 /// Data used to create an `Attribute` for a `Product` model.
 struct AttributeContent: Content {
-    
-    ///
     let name: String
-    
-    ///
+    let type: String
     let value: String
+    let language: String
 }

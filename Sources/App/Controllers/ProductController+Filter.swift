@@ -37,14 +37,16 @@ extension Product {
             query = attributes.map(to: QueryBuilder<Product, Product>.self) { (attributes) in
                 
                 // Group the attributes togeather by their `productID` property.
-                let keys = attributes.group(by: \.productID).filter({ (id, attributes) -> Bool in
+                // TODO: - We had a `.group(by: \productID)` call here.
+                let keys = attributes.filter({ (attributes) -> Bool in
                     
                     // If we have the same amount of filters as attributes, we have a match!
-                    return attributes.count == filters.count
-                }).keys
+//                    return attributes.count == filters.count
+                    return true
+                })/*.keys*/
                 
                 // Get all products that have the correct amount of attributes.
-                let ids = Array(keys)
+                let ids = Array(keys) .map({ $0.id! })
                 return try Product.query(on: request).filter(\.id ~~ ids)
             }
         }

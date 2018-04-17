@@ -41,7 +41,7 @@ final class AttributesController: RouteCollection {
         
         // Get the amount of attributes that already exist in the database with the name of the new attribute.
         let attributeCount = parent.flatMap(to: Int.self) { (product) in
-            return try Attribute.query(on: request).filter(\.name == attribute.name).filter(\.productID == product.requireID()).count()
+            return try Attribute.query(on: request).filter(\.name == attribute.name).count()
         }
         
         return flatMap(to: Attribute.self, attributeCount, parent) { (attributeCount, parent) in
@@ -52,7 +52,7 @@ final class AttributesController: RouteCollection {
             }
             
             // Create the new attribute, Save it to the database, and return it from the route.
-            return try Attribute(name: attribute.name, type: attribute.value, productID: parent.requireID()).save(on: request)
+            return try Attribute(name: attribute.name, type: attribute.value).save(on: request)
         }
     }
     

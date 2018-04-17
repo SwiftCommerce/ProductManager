@@ -10,20 +10,6 @@ struct ProductUpdateBody: Content {
     /// A wrapper type, allowing the request's body to have a nested strcuture:
     ///
     ///     {
-    ///       "attributes": {"attach": [], "detach": []}
-    ///     }
-    struct AttributeUpdate: Content {
-        
-        /// The IDs of the attributes to attach (create pivots) to the prodcut.
-        let create: [AttributeContent]?
-        
-        /// The IDs of the attributes to detach (delete pivots) from the prodcut.
-        let delete: [Attribute.ID]?
-    }
-    
-    /// A wrapper type, allowing the request's body to have a nested strcuture:
-    ///
-    ///     {
     ///       "prices": {"attach": [], "detach": []}
     ///     }
     struct PricesUpdate: Content {
@@ -34,10 +20,6 @@ struct ProductUpdateBody: Content {
         /// The IDs of the `Price` model to dettach from the `Product` model.
         let detach: [Price.ID]?
     }
-    
-    /// A decoded JSON object to get the IDs of `Attribute` models
-    /// to attach to and detach from the product.
-    let attributes: AttributeUpdate?
     
     /// A decoded JSON object to get the IDs of `Category` models
     /// to attach to and detach from the product.
@@ -137,9 +119,6 @@ final class ProductController: RouteCollection {
         let product = try request.parameter(Product.self)
         
         // Get all models that have an ID in any if the request bodies' arrays.
-        let detachAttributes = Attribute.query(on: request).models(where: \Attribute.id, in: body.attributes?.delete)
-        let attachAttributes = Future.map(on: request) { body.attributes?.create ?? [] }
-        
         let detachCategories = Category.query(on: request).models(where: \Category.id, in: body.categories?.detach)
         let attachCategories = Category.query(on: request).models(where: \Category.id, in: body.categories?.attach)
         
@@ -148,20 +127,6 @@ final class ProductController: RouteCollection {
         
         // Attach and detach the models fetched with the ID arrays.
         // This means we either create or delete a row in a pivot table.
-        let attributes = Async.flatMap(to: Void.self, product, detachAttributes, attachAttributes) { (product, detach, attach) in
-            let detached = detach.map({ product.attributes.detach($0, on: request) }).flatten(on: request)
-            
-            let attached = attach.map({ content in
-                Attribute(name: content.name, type: content.type).save(on: request).map(to: ProductAttribute.self) { attribute in
-                    return try ProductAttribute(value: content.value, language: content.language, product: product, attribute: attribute)
-                }.save(on: request)
-            }).flatten(on: request).transform(to: ())
-            
-            // This syntax allows you to complete the current future
-            // when both of the futures in the array are complete.
-            return [detached, attached].flatten(on: request)
-        }.transform(to: ())
-        
         let categories = Async.flatMap(to: Void.self, product, detachCategories, attachCategories) { (product, detach, attach) in
             let detached = detach.map({ product.categories.detach($0, on: request) }).flatten(on: request)
             let attached = try attach.map({ try ProductCategory(product: product, category: $0).save(on: request) }).flatten(on: request).transform(to: ())
@@ -175,7 +140,7 @@ final class ProductController: RouteCollection {
         }.transform(to: ())
         
         // Once all the attaching/detaching is complete, convert the updated model to a `ProductResponseBody` and return it.
-        return [attributes, categories, prices].flatten(on: request).flatMap(to: ProductResponseBody.self) {
+        return [categories, prices].flatten(on: request).flatMap(to: ProductResponseBody.self) {
             return product.response(on: request)
         }
     }

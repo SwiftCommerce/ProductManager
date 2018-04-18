@@ -107,7 +107,7 @@ extension Product {
         if let attributes = try request.query.get([String: String]?.self, at: "filter") {
             
             // `OR` query groups are broken in Fluent 3, so we create and run a raw query.
-            var attributeQuery = "SELECT * FROM \(Attribute.entity)"
+            var attributeQuery = "SELECT * FROM `\(Attribute.entity)` INNER JOIN `\(ProductAttribute.entity)` ON `\(ProductAttribute.entity)`.attributeID = `\(Attribute.entity)`.id"
             var paraneters: [MySQLDataConvertible] = []
             
             let whereClause = attributes.map { attribute in
@@ -116,7 +116,7 @@ extension Product {
                 
                 // The querstion-marks are placeholders in the query.
                 // They are replaced with the `parameters` values passed into the `.raw` method.
-                return "(`name` = ? AND `value` = ?)"
+                return "(`\(Attribute.entity)`.`name` = ? AND `\(ProductAttribute.entity)`.`value` = ?)"
             }.joined(separator: " OR ")
             attributeQuery += " WHERE \(whereClause)"
             

@@ -36,10 +36,29 @@ extension Product {
             idsConstrainedWithCategories(with: request)
         ].flatten(on: request)
         
-        // Remove `nil` arrays, compress 2D array to 1D, and remove duplicate values.
         let cleanedIDs = productIDs.map(to: [Product.ID]?.self) { ids in
-            let cleanedIDs = ids.compactMap { $0 }.flatMap { $0 }
-            guard cleanedIDs.count > 0 else { return nil }
+            
+            // Verify not all arrays are `nil`.
+            guard ids.compactMap({ $0 }).count > 0 else { return nil }
+            
+            // Get values to only occur in all arrays passed in.
+            let cleanedIDs: [Product.ID] = ids.compactMap { $0 }.reduce(into: [], { (result, ids) in
+                
+                // Set the inital array to the base result.
+                if result == [] { result = ids; return }
+                
+                // If a value in the result is not in another array
+                // it does not exist in all the arrays and should be removed.
+                // Complexity: `O(n*m^2)`
+                result.forEach { id in
+                    if !ids.contains(id) {
+                        let index = result.index(of: id)!
+                        result.remove(at: index)
+                    }
+                }
+            })
+            
+            // Remove duplicate values.
             return Array(Set(cleanedIDs))
         }
         

@@ -64,4 +64,10 @@ public func configure(
     // Register Database and Migration configurations with the application services.
     services.register(databases)
     services.register(migrations)
+    
+    // Register the `revert` command with service,
+    // used to drop the database.
+    var commands = CommandConfig.default()
+    commands.useFluentCommands()
+    services.register(commands)
 }

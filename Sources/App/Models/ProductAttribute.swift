@@ -3,11 +3,12 @@ import FluentSQL
 import Vapor
 
 final class ProductAttribute: MySQLPivot, Migration {
-    static var leftIDKey: WritableKeyPath<ProductAttribute, Int> = \.productID
-    static var rightIDKey: WritableKeyPath<ProductAttribute, Int> = \.attributeID
-    
     typealias Left = Product
     typealias Right = Attribute
+    
+    static var leftIDKey: WritableKeyPath<ProductAttribute, Int> = \.productID
+    static var rightIDKey: WritableKeyPath<ProductAttribute, Int> = \.attributeID
+    static var entity: String = "productAttribtues"
     
     var id: Int?
     

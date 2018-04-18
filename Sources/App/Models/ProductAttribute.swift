@@ -8,7 +8,7 @@ final class ProductAttribute: MySQLPivot, Migration {
     
     static var leftIDKey: WritableKeyPath<ProductAttribute, Int> = \.productID
     static var rightIDKey: WritableKeyPath<ProductAttribute, Int> = \.attributeID
-    static var entity: String = "productAttribtues"
+    static var entity: String = "productAttributes"
     
     var id: Int?
     

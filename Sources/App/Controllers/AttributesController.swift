@@ -52,7 +52,7 @@ final class AttributesController: RouteCollection {
             }
             
             // Create the new attribute, Save it to the database, and return it from the route.
-            return Attribute(name: content.name, type: content.value).save(on: request)
+            return Attribute(name: content.name, type: content.type).save(on: request)
         }
         
         // Create a pivot between the parent product and the attribute, then return the attribute.

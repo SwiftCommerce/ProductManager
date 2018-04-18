@@ -1,5 +1,6 @@
 import FluentMySQL
 import FluentSQL
+import Vapor
 
 // MARK: - Request Body Type
 
@@ -79,7 +80,10 @@ final class ProductController: RouteCollection {
     /// Get all the prodcuts from the database.
     func index(_ request: Request)throws -> Future<[ProductResponseBody]> {
         
-        fatalError()
+        try request.make(Logger.self).warning("Replace ProductController.index body with Product.filter call")
+        return Product.query(on: request).all().flatMap(to: [ProductResponseBody].self, { products in
+            return products.map { Promise(product: $0, on: request).futureResult }.flatten(on: request)
+        })
     }
     
     /// Get the `Product` model from the database with a given ID.

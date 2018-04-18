@@ -1,3 +1,5 @@
+import Vapor
+
 /// The curremt working status of a product model.
 enum ProductStatus: Int, Codable, ReflectionDecodable {
     
@@ -11,6 +13,9 @@ enum ProductStatus: Int, Codable, ReflectionDecodable {
     case deactivated
 }
 
+//extension ProductStatus: URLEncodedFormDataConvertible {
+//    
+//}
 
 extension ProductStatus: MySQLColumnDefinitionStaticRepresentable {
     

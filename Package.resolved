@@ -150,8 +150,8 @@
         "repositoryURL": "https://github.com/vapor/url-encoded-form.git",
         "state": {
           "branch": null,
-          "revision": "aca8efc7176f3ea2352dcbcd32526f82af5647c3",
-          "version": "1.0.1"
+          "revision": "8448fa943057c01220f6a940d3b1b8e9fd92a96e",
+          "version": "1.0.2"
         }
       },
       {

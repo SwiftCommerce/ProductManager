@@ -1,8 +1,6 @@
 import Foundation
 import Vapor
 
-let ints = "1234567890"
-
 /// The price for a product.
 /// A price is connected to a translations because you need to
 /// use different currencies for a single price.

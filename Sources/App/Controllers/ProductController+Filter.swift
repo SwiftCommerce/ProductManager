@@ -118,7 +118,7 @@ extension Product {
         if priceConstraints < 1 { return Future.map(on: request) { nil } }
         
         // Construct the full query, then run it, passing in the query paramaters.
-        return ProductID.raw(priceQuery + " WERE " + constraints.joined(separator: " AND "), with: paramaters, on: request).map(to: [Product.ID]?.self) { pivots in
+        return ProductID.raw(priceQuery + " WHERE " + constraints.joined(separator: " AND "), with: paramaters, on: request).map(to: [Product.ID]?.self) { pivots in
             return pivots.map { $0.productID }
         }
     }

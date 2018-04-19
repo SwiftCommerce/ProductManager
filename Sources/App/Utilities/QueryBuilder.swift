@@ -37,7 +37,7 @@ extension Model {
         
         // I would document this, but I hope it get Sherlocked by Fluent.
         return connector.connect(to: .mysql).flatMap(to: [[MySQLColumn : MySQLData]].self) { (connection) in
-            defer { connection.log(query: query, with: parameters) }
+            connection.log(query: query, with: parameters)
             return connection.query(query, parameters)
         }.map(to: [Self].self, { (data) in
             return try data.map({ row -> Self in

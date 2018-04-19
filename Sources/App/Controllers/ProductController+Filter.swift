@@ -42,7 +42,7 @@ extension Product {
             guard ids.compactMap({ $0 }).count > 0 else { return nil }
             
             // Get values to only occur in all arrays passed in.
-            let cleanedIDs: [Product.ID] = ids.compactMap { $0 }.reduce(into: [], { (result, ids) in
+            let cleanedIDs: [Product.ID] = ids.compactMap { $0 }.reduce(into: []) { (result, ids) in
                 
                 // Set the inital array to the base result.
                 if result == [] { result = ids; return }
@@ -56,7 +56,7 @@ extension Product {
                         result.remove(at: index)
                     }
                 }
-            })
+            }
             
             // Remove duplicate values.
             return Array(Set(cleanedIDs))

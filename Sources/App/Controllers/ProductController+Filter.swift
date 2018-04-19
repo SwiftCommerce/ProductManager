@@ -120,7 +120,7 @@ extension Product {
     }
     
     private static func idsConstrainedWithAttributes(with request: Request)throws -> Future<[Product.ID]?> {
-        let futureAttributes: Future<[Attribute]>
+        let futureAttributes: Future<[ProductID]>
         let filterCount: Int
         
         if let attributes = try request.query.get([String: String]?.self, at: "filter") {
@@ -139,19 +139,13 @@ extension Product {
             }.joined(separator: " OR ")
             attributeQuery += " WHERE \(whereClause)"
             
-            futureAttributes = Attribute.raw(attributeQuery, with: paraneters, on: request)
+            futureAttributes = ProductID.raw(attributeQuery, with: paraneters, on: request)
             filterCount = attributes.count
         } else {
             return Future.map(on: request) { nil }
         }
         
-        return futureAttributes.each(to: [ProductAttribute].self) { attribute in
-            return try attribute.siblings(related: Product.self, through: ProductAttribute.self).pivots(on: request).all()
-        }
-        
-        // Flatten the 2D array.
-        .map(to: [ProductAttribute].self) { $0.flatMap { $0 } }
-        .map(to: [Product.ID]?.self) { (pivots) in
+        return futureAttributes.map(to: [Product.ID]?.self) { (pivots) in
             
             // 1. Create a dictionary, where the `productID` is the key
             //    and the pivots that have an equal `productID` value

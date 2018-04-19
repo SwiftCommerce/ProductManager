@@ -37,6 +37,7 @@ extension Model {
         
         // I would document this, but I hope it get Sherlocked by Fluent.
         return connector.connect(to: .mysql).flatMap(to: [[MySQLColumn : MySQLData]].self) { (connection) in
+            defer { connection.log(query: query, with: parameters) }
             return connection.query(query, parameters)
         }.map(to: [Self].self, { (data) in
             return try data.map({ row -> Self in
@@ -46,5 +47,37 @@ extension Model {
                 return try QueryDataDecoder(MySQLDatabase.self, entity: Self.entity).decode(Self.self, from: genericData)
             })
         })
+    }
+}
+
+extension MySQLConnection {
+    
+    /// A generic logging method for outputting raw queries and
+    /// its parameters to the console if the connection has logging enabled.
+    ///
+    /// - Parameters:
+    ///   - query: The database query that is run on the connection.
+    ///   - parameters: The paramaters that are passed into the query
+    ///     for replacement values.
+    func log(query: String, with parameters: [MySQLDataConvertible]) {
+        do {
+            
+            // If database logging is enabled, the connection will have a logger.
+            if let logger = self.logger {
+                
+                // Create a formatted message with the query, parameters, and timestamp.
+                let log = DatabaseLog(
+                    query: query,
+                    values: try parameters.map { try $0.convertToMySQLData().description },
+                    dbID: "mysql"
+                )
+                
+                // Log the message.
+                logger.record(log: log)
+            }
+        } catch {
+            // Converting the paramaters passed in to `MySQLData` failed. Signify the failure to log.
+            print(DatabaseLog(query: "Logging failed. Unable to get parameter descriptions.", dbID: "mysql"))
+        }
     }
 }

@@ -197,6 +197,7 @@ extension Product {
     }
 }
 
-struct ProductID: Codable {
+struct ProductID: MySQLModel {
+    var id: Int?
     let productID: Product.ID
 }

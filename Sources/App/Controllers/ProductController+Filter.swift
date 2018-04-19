@@ -92,15 +92,24 @@ extension Product {
     }
     
     private static func idsConstrainedWithPrice(with request: Request)throws -> Future<[Product.ID]?> {
-        let priceQuery = Price.query(on: request)
         
+        // Setup base query, along with logical constrainst and paramaters storage.
+        let priceQuery = "SELECT * FROM `\(Price.entity)` INNER JOIN `\(ProductPrice.entity)` ON `\(ProductPrice.entity)`.`priceID` = `\(Price.entity)`.`id`"
+        var constraints: [String] = []
+        var paramaters: [MySQLDataConvertible] = []
         var priceConstraints: Int = 0
+        
+        // See if a `minPrice` query was passed in. If so,
+        // update the query data stores and logival checks.
         if let min = try request.query.get(Float?.self, at: "minPrice") {
-            try priceQuery.filter(\.price >= min)
+            constraints.append("`\(Price.entity)`.`price` >= ?")
+            paramaters.append(min)
             priceConstraints += 1
         }
+        
         if let max = try request.query.get(Float?.self, at: "maxPrice") {
-            try priceQuery.filter(\.price <= max)
+            constraints.append("`\(Price.entity)`.`price` <= ?")
+            paramaters.append(max)
             priceConstraints += 1
         }
         
@@ -108,14 +117,9 @@ extension Product {
         // This will not restrict the `Propduct` models that are fetched.
         if priceConstraints < 1 { return Future.map(on: request) { nil } }
         
-        return priceQuery.all().each(to: [ProductID].self) { price in
-            return try price.siblings(related: Product.self, through: ProductPrice.self).pivots(on: request).decode(ProductID.self).all()
-        }
-            
-        // Flatten the 2D array, then get all the `.productID` values from the elements.
-        .map { $0.flatMap { $0 }.map { $0.productID } }
-        .map(to: [Product.ID]?.self) { ids in
-            return ids
+        // Construct the full query, then run it, passing in the query paramaters.
+        return ProductID.raw(priceQuery + " WERE " + constraints.joined(separator: " AND "), with: paramaters, on: request).map(to: [Product.ID]?.self) { pivots in
+            return pivots.map { $0.productID }
         }
     }
     

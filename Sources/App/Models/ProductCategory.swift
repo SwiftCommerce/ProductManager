@@ -3,25 +3,25 @@ final class ProductCategory: MySQLPivot, Migration {
     typealias Left = Product
     typealias Right = Category
     
-    static var leftIDKey: WritableKeyPath<ProductCategory, Int> = \.productId
-    static var rightIDKey: WritableKeyPath<ProductCategory, Int> = \.categoryId
+    static var leftIDKey: WritableKeyPath<ProductCategory, Int> = \.productID
+    static var rightIDKey: WritableKeyPath<ProductCategory, Int> = \.categoryID
     static let entity: String = "productCategories"
     
-    var productId: Product.ID
-    var categoryId: Category.ID
+    var productID: Product.ID
+    var categoryID: Category.ID
     var id: Int?
     
     /// Create a pivot from a `Product` and `Attribute` model.
     init(product: Product, category: Category)throws {
         
         // Verfiy the `product` has been save to the database (that it has an ID).
-        let productId = try product.requireID()
+        let productID = try product.requireID()
         
         // Verfiy the `category` has been save to the database.
-        let categoryId = try category.requireID()
+        let categoryID = try category.requireID()
         
-        self.productId = productId
-        self.categoryId = categoryId
+        self.productID = productID
+        self.categoryID = categoryID
     }
 }
 

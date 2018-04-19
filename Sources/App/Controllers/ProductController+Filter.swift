@@ -189,7 +189,7 @@ extension Product {
         
         .map { $0.flatMap { $0 } }
         .map(to: [Product.ID]?.self) { pivots in
-            let keys = pivots.group(by: \.productId).filter { _, pivots in
+            let keys = pivots.group(by: \.productID).filter { _, pivots in
                 return pivots.count == categoryCount
             }.keys
             return Array(keys)

@@ -47,7 +47,7 @@ final class Product: Content, MySQLModel, Migration, Parameter {
         return Future.flatMap(on: request, {
             
             // Return all the `Category` models connected to the current `Product` through pivots.
-            return try self.categories.query(on: request).all()
+            return try self.categories.query(on: request).sort(\.sort, .ascending).all()
         })
     }
     
@@ -69,7 +69,7 @@ final class Product: Content, MySQLModel, Migration, Parameter {
             return try Async.flatMap(
                 to: Void.self,
                 self.categories.deleteConnections(on: request),
-                self.attributes(on: request).delete(),
+                self.attributes.query(on: request).delete(),
                 self.translations(on: request).delete()
             ) { _, _, _ in
                 
@@ -98,13 +98,16 @@ struct ProductResponseBody: Content {
     let status: ProductStatus
     
     ///
-    let attributes: [Attribute]
+    let attributes: [AttributeContent]
     
     ///
     let translations: [TranslationResponseBody]
     
     ///
     let categories: [CategoryResponseBody]
+    
+    ///
+    let prices: [Price]
 }
 
 /// Extend `Promise` if it wraps a `ProductResponseBody`.
@@ -120,26 +123,37 @@ extension Promise where T == ProductResponseBody {
     init(product: Product, on request: Request) {
         let promise = request.eventLoop.newPromise(ProductResponseBody.self)
         
-        /// Wrap the whole body in a do/catch so the initializer doesn't have to throw.
+        // Wrap the whole body in a do/catch so the initializer doesn't have to throw.
         do {
             
-            /// Get all the attributes connected to the product.
-            let attributes = try product.attributes(on: request).all()
+            // Get all the attributes connected to the product.
+            let attributes = try product.attributes.response(on: request)
             
-            /// Get all the translations connected to the product and convert them to their response type.
+            // Get all `Price` models connected to the product.
+            let prices = try product.prices.query(on: request).all()
+            
+            // Get all the translations connected to the product and convert them to their response type.
             let translations = product.translations(with: request).flatMap(to: [TranslationResponseBody].self) { $0.map({ translation in
                 return translation.response(on: request)
             }).flatten(on: request) }
             
-            /// Get all the categories connected to the product and convert them to their resonse type.
+            // Get all the categories connected to the product and convert them to their resonse type.
             let categories = product.categories(with: request).flatMap(to: [CategoryResponseBody].self) {
                 $0.map({ Promise<CategoryResponseBody>(category: $0, on: request).futureResult }).flatten(on: request)
             }
             
-            /// Once all the queries have complete, take the data, create a `ProductResponseBody` from the data, and return it.
-            Async.map(to: ProductResponseBody.self, attributes, translations, categories, { (attributes, translations, categories) in
-                return ProductResponseBody(id: product.id, sku: product.sku, status: product.status, attributes: attributes, translations: translations, categories: categories)
-            }).do { (body) in
+            // Once all the queries have complete, take the data, create a `ProductResponseBody` from the data, and return it.
+            Async.map(to: ProductResponseBody.self, attributes, translations, categories, prices) { (attributes, translations, categories, prices) in
+                return ProductResponseBody(
+                    id: product.id,
+                    sku: product.sku,
+                    status: product.status,
+                    attributes: attributes,
+                    translations: translations,
+                    categories: categories,
+                    prices: prices
+                )
+            }.do { (body) in
                 
                 // The `ProductResponseBody` was succesfuly created,
                 // succeed the promise with it.

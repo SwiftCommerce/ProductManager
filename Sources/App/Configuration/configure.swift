@@ -23,6 +23,7 @@ public func configure(
     // Register middleware with the app's services.
     // These middleware will automaticly be added to all routes.
     var middlewares = MiddlewareConfig() // Create _empty_ middleware config
+    middlewares.use(CORSMiddleware(configuration: .default)) // Adds Cross-Origin-Request headers to all responses
     middlewares.use(DateMiddleware.self) // Adds `Date` header to responses
     middlewares.use(ErrorMiddleware.self) // Catches errors and converts to HTTP response
     services.register(middlewares)
@@ -34,16 +35,6 @@ public func configure(
         databases.enableLogging(on: .mysql)
     }
     
-    // We use the `database` var localy, but Vapor Cloud uses `DATABASE_DB`.
-    let databaseName: String
-    if let name = Environment.get("database") {
-        databaseName = name
-    } else if let name =  Environment.get("DATABASE_DB") {
-        databaseName = name
-    } else {
-        throw Abort.init(.failedDependency, reason: "Missing environment variable `database`.")
-    }
-    
     // Configure the MySQL Database.
     // If we are in Vapor Cloud, we use the available env vars,
     // otherwise we use the values for local development
@@ -52,7 +43,7 @@ public func configure(
         port: 3306,
         username: Environment.get("DATABASE_USER") ?? "root",
         password: Environment.get("DATABASE_PASSWORD") ?? "password",
-        database:  databaseName
+        database:  Environment.get("DATABASE_DB") ?? "product_manager"
     )
     databases.add(database: MySQLDatabase(config: config), as: .mysql)
 
@@ -63,12 +54,20 @@ public func configure(
     migrations.add(model: Product.self, database: .mysql)
     migrations.add(model: Price.self, database: .mysql)
     migrations.add(model: Attribute.self, database: .mysql)
+    migrations.add(model: ProductPrice.self, database: .mysql)
     migrations.add(model: CategoryPivot.self, database: .mysql)
     migrations.add(model: ProductCategory.self, database: .mysql)
+    migrations.add(model: ProductAttribute.self, database: .mysql)
     migrations.add(model: ProductTranslation.self, database: .mysql)
     migrations.add(model: CategoryTranslation.self, database: .mysql)
     
     // Register Database and Migration configurations with the application services.
     services.register(databases)
     services.register(migrations)
+    
+    // Register the `revert` command with service,
+    // used to drop the database.
+    var commands = CommandConfig.default()
+    commands.useFluentCommands()
+    services.register(commands)
 }

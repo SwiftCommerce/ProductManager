@@ -6,6 +6,9 @@ struct CategoryUpdateBody: Content {
     
     /// The IDs of the categories to detach from the parent category that are attached through pivots.
     let detach: [Category.ID]?
+    
+    /// A new value for the category's `sort` property.
+    let sort: Int?
 }
 
 /// A controller for API endpoints that make operations on the `Category` model.
@@ -23,7 +26,8 @@ final class CategoryController: RouteCollection {
         let categories = router.grouped("categories")
         
         // Registers a POST endpoint at `/categories`.
-        categories.post(use: create)
+        // The route automatically decodes the request's body to a `Category` model.
+        categories.post(Category.self, use: create)
         
         // Registers a GET endpoint at `/categories`.
         categories.get(use: index)
@@ -40,23 +44,20 @@ final class CategoryController: RouteCollection {
     }
     
     /// Creates a new `Category` model.
-    func create(_ request: Request)throws -> Future<CategoryResponseBody> {
+    func create(_ request: Request, category: Category)throws -> Future<CategoryResponseBody> {
         
-        // Get the value of the `name` key from the request's body.
-        let name = request.content.get(String.self, at: "name")
-        
-        // Create a new category with the name from the request, save the category to the database, and convert it to a `CategoryResponseBody`.
-        return name.map(to: Category.self, { Category(name: $0) }).save(on: request).response(on: request)
+        // Get the category decoded from the request, save the category to the database, and convert it to a `CategoryResponseBody`.
+        return category.save(on: request).response(on: request)
     }
     
     /// Get all `Category` models from the database.
     func index(_ request: Request)throws -> Future<[CategoryResponseBody]> {
         
         // Fetch all categories from the database.
-        return Category.query(on: request).all().flatMap(to: [CategoryResponseBody].self, { (categories) in
+        return try Category.query(on: request).filter(\.isMain == true).sort(\.sort, .ascending).all().each(to: CategoryResponseBody.self, transform: { (category) in
             
             // Convert all categories to `CategoryResponseBody`s and return them.
-            categories.map({ Promise(category: $0, on: request).futureResult }).flatten(on: request)
+            return Promise(category: category, on: request).futureResult
         })
     }
     
@@ -84,11 +85,15 @@ final class CategoryController: RouteCollection {
             let detached = detach.map({ category.subCategories.detach($0, on: request) }).flatten(on: request)
             
             // Attach all categories to parent category with an ID in the `attach` array.
-            // We don't use `categories.subCategories.attach` because we gett weird compiler errors when we do.
-            let attached = try attach.map({ try CategoryPivot(category, $0).save(on: request) }).flatten(on: request).transform(to: ())
+            // We don't use `categories.subCategories.attach` because we get weird compiler errors when we do.
+            let attached = try attach.map({ try category.attachWithoutDuplication($0, on: request) }).flatten(on: request).transform(to: ())
+            
+            // Updates the category's `sort` property value if on exists in the request's body.
+            category.sort = categories.sort ?? category.sort
+            let sort = category.save(on: request).transform(to: ())
             
             // Once attaching and detaching are complete, return the category that we updated.
-            return [detached, attached].flatten(on: request).transform(to: category)
+            return [detached, attached, sort].flatten(on: request).transform(to: category)
         }.response(on: request)
     }
     

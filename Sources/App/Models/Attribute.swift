@@ -8,43 +8,28 @@ final class Attribute: Content, MySQLModel, Migration, Parameter {
     let name: String
     
     /// The value of the attribute, given by the user.
-    var value: String
-    
-    /// The ID of the `Product` model that owns the attribute.
-    let productID: Product.ID
+    var type: String
     
     ///
-    init(name: String, value: String, productID: Product.ID) {
+    init(name: String, type: String) {
         self.name = name
-        self.value = value
-        self.productID = productID
+        self.type = type
     }
 }
 
 /// Data used to create an `Attribute` for a `Product` model.
 struct AttributeContent: Content {
-    
-    ///
+    let id: Attribute.ID?
     let name: String
-    
-    ///
+    let type: String
     let value: String
-}
-
-extension Product {
+    let language: String
     
-    /// Creates a query that gets all `Attribute` model connected to the current product.
-    ///
-    /// - parameter executor: The object that gets a connection to the database
-    ///   to run the query.
-    /// - returns: A `QueryBuilder` that fetches `Attribute` models connected to the current product.
-    func attributes(on executor: DatabaseConnectable)throws -> QueryBuilder<Attribute, Attribute> {
-        return try Attribute.query(on: executor).filter(\.productID == self.id)
-    }
-}
-
-extension QueryBuilder where Model == Attribute, Result == Attribute {
-    func detach(_ attribute: Attribute, on executor: DatabaseConnectable)throws -> Future<Void> {
-        return try self.filter(\.id == attribute.id).delete()
+    init(attribute: Attribute, pivot: ProductAttribute) {
+        self.id = attribute.id
+        self.name = attribute.name
+        self.type = attribute.type
+        self.value = pivot.value
+        self.language = pivot.language
     }
 }

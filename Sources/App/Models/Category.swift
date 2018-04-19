@@ -4,11 +4,23 @@ final class Category: Content, MySQLModel, Migration, Parameter {
     /// The database ID of the model.
     var id: Int?
     
+    /// How high in a list of categories
+    /// this instance should appear.
+    var sort: Int
+    
+    /// A flag that declares the category being
+    /// a top-level category and not a sub-category.
+    var isMain: Bool
+    
     /// The name of the category.
     let name: String
     
     ///
-    init(name: String) { self.name = name }
+    init(name: String, sort: Int, isMain: Bool) {
+        self.name = name
+        self.sort = sort
+        self.isMain = isMain
+    }
     
     /// Gets all the categories translations.
     ///
@@ -30,11 +42,18 @@ final class Category: Content, MySQLModel, Migration, Parameter {
 /// A representation of a `Category` model including sub-categories and translations.
 /// Returned from a route handler instead of a raw category for full data representation.
 struct CategoryResponseBody: Content {
+    
     ///
     let id: Int?
     
     ///
     let name: String
+    
+    ///
+    let sort: Int
+    
+    ///
+    let isMain: Bool
     
     ///
     let subcategories: [CategoryResponseBody]
@@ -53,7 +72,7 @@ extension Promise where T == CategoryResponseBody {
     ///   - category: The category model to get the information to populate the struct with.
     ///   - executor: The object to use to run the queries that will fetch the models connected to the category.
     /// - returns: A `CategoryResponseBody` populated with data from the category passed in, wrapped in a `Promise`.
-    init(category: Category, on request: Request) {
+    init(category: Category, on request: Request, failingOn fetched: [Category.ID] = []) {
         
         // Create a new promise from the request's event loop.
         // We don't assign to self yet because we can't call `.succeed` on `self`.
@@ -63,10 +82,20 @@ extension Promise where T == CategoryResponseBody {
         do {
             
             // Get all the sub-categories connected to the category passed in.
-            let categories = try category.subCategories.query(on: request).all().flatMap(to: [CategoryResponseBody].self) { (categories) in
+            let categories = try category.subCategories.query(on: request).sort(\.sort, .ascending).all().flatMap(to: [CategoryResponseBody].self) { (categories) in
                 
                 // Convert the sub-categories to `CategoryResponseBody`s.
-                return categories.map({ Promise(category: $0, on: request).futureResult }).flatten(on: request)
+                return try categories.map({ child -> Future<CategoryResponseBody> in
+                    
+                    // Verify the the category has not been fetched in the same branch before.
+                    // If it has, abort. We found a recursive pivot.
+                    let id = try child.requireID()
+                    guard !fetched.contains(id) else {
+                        throw Abort(.internalServerError, reason: "Found recursive category/category pivot containing category with id '\(id)'")
+                    }
+                    
+                    return Promise(category: child, on: request, failingOn: fetched + [id]).futureResult
+                }).flatten(on: request)
             }
             
             // Get the sub-categories and translations, convert them to a `CategoryResponseBody`, and assign self.
@@ -76,8 +105,10 @@ extension Promise where T == CategoryResponseBody {
                 return CategoryResponseBody(
                     id: category.id,
                     name: category.name,
+                    sort: category.sort,
+                    isMain: category.isMain,
                     subcategories: subCategories,
-                    translations: translations.map({ TranslationResponseBody($0, price: nil) })
+                    translations: translations.map({ TranslationResponseBody($0) })
                 )
             }.do { (body) in
                 

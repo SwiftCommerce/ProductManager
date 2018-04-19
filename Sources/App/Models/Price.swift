@@ -33,7 +33,6 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     ///   - activeFrom: The date the price starts being valid. If you pass in `nil`, it defaults to the time the price is created (`Date()`).
     ///   - activeTo: The date the price becomes invalid. If you pass in `nil`, it defaults to some time in the distant future (`Date.distantFuture`).
     ///   - active: Wheather or not the price is valid. If you pass in `nil`, the value is calculated of the `activeFrom` and `activeTo` dates.
-    ///   - translationName: The name of the translation that owns the price.
     init(price: Float, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
         guard
             (currency.count == 3 && currency.replacingOccurrences(of: "\\d", with: "$1", options: .regularExpression) == currency) ||

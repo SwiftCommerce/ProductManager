@@ -42,6 +42,7 @@ final class Category: Content, MySQLModel, Migration, Parameter {
 /// A representation of a `Category` model including sub-categories and translations.
 /// Returned from a route handler instead of a raw category for full data representation.
 struct CategoryResponseBody: Content {
+    
     ///
     let id: Int?
     
@@ -50,6 +51,9 @@ struct CategoryResponseBody: Content {
     
     ///
     let sort: Int
+    
+    ///
+    let isMain: Bool
     
     ///
     let subcategories: [CategoryResponseBody]
@@ -102,6 +106,7 @@ extension Promise where T == CategoryResponseBody {
                     id: category.id,
                     name: category.name,
                     sort: category.sort,
+                    isMain: category.isMain,
                     subcategories: subCategories,
                     translations: translations.map({ TranslationResponseBody($0) })
                 )

@@ -162,27 +162,22 @@ extension Product {
     }
     
     private static func idsConstrainedWithCategories(with request: Request)throws -> Future<[Product.ID]?> {
-        let futureCategories: Future<[Category]>
+        let futureCategories: Future<[ProductID]>
         let categoryCount: Int
         
         if let categories = try request.query.get([String]?.self, at: "categories") {
-            let categoriesQuery = "SELECT * FROM \(Category.entity)"
+            let categoriesQuery = "SELECT * FROM `\(Category.entity)` INNER JOIN `\(ProductCategory.entity)` ON `\(ProductCategory.entity)`.`categoryID` = `\(Category.entity)`.`id`"
             let parameters: [MySQLDataConvertible] = categories
-            let whereCaluse = Array(repeating: "`name` = ?", count: categories.count).joined(separator: " OR ")
+            let whereCaluse = Array(repeating: "`\(Category.entity)`.`name` = ?", count: categories.count).joined(separator: " OR ")
             let query = categoriesQuery + " WHERE " + whereCaluse
             
-            futureCategories = Category.raw(query, with: parameters, on: request)
+            futureCategories = ProductID.raw(query, with: parameters, on: request)
             categoryCount = categories.count
         } else {
             return Future.map(on: request) { nil }
         }
         
-        return futureCategories.each(to: [ProductCategory].self) { category in
-            return try category.siblings(related: Product.self, through: ProductCategory.self).pivots(on: request).all()
-        }
-        
-        .map { $0.flatMap { $0 } }
-        .map(to: [Product.ID]?.self) { pivots in
+        return futureCategories.map(to: [Product.ID]?.self) { pivots in
             let keys = pivots.group(by: \.productID).filter { _, pivots in
                 return pivots.count == categoryCount
             }.keys

@@ -2,9 +2,8 @@ import Foundation
 import Vapor
 
 /// The price for a product.
-/// A price is connected to a translations because you need to
-/// use different currencies for a single price.
-/// You also might want to do a region specific discount.
+/// A `Price` connects to a `Product` model through the
+/// `ProductPrice` pivot model.
 final class Price: Content, MySQLModel, Migration, Parameter {
     
     /// The database ID of the model.

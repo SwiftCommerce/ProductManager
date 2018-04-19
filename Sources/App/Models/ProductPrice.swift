@@ -7,7 +7,7 @@ final class ProductPrice: MySQLPivot, Migration {
     
     static var leftIDKey: WritableKeyPath<ProductPrice, Int> = \.productID
     static var rightIDKey: WritableKeyPath<ProductPrice, Int> = \.priceID
-    static let entity: String = "productPrice"
+    static let entity: String = "productPrices"
     
     var id: Int?
     

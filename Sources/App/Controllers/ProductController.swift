@@ -89,7 +89,7 @@ final class ProductController: RouteCollection {
         
         // Get the specified model from the route's paramaters
         // and convert it to a `ProductResponseBody`
-        return try request.parameter(Product.self).response(on: request)
+        return try request.parameters.next(Product.self).response(on: request)
     }
     
     /// Get all the `Product` models connected to specified categories.
@@ -118,7 +118,7 @@ final class ProductController: RouteCollection {
     func update(_ request: Request, _ body: ProductUpdateBody)throws -> Future<ProductResponseBody> {
         
         // Get the model to update from the request's route parameters.
-        let product = try request.parameter(Product.self)
+        let product = try request.parameters.next(Product.self)
         
         // Get all models that have an ID in any if the request bodies' arrays.
         let detachCategories = Category.query(on: request).models(where: \Category.id, in: body.categories?.detach)
@@ -152,6 +152,6 @@ final class ProductController: RouteCollection {
         
         // Get the model from the route paramaters,
         // delete it from the database, and return HTTP status 204 (No Content).
-        return try request.parameter(Product.self).delete(on: request).transform(to: .noContent)
+        return try request.parameters.next(Product.self).delete(on: request).transform(to: .noContent)
     }
 }

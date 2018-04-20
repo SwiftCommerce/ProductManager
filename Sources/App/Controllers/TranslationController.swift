@@ -105,14 +105,14 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
     func show(_ request: Request)throws -> Future<TranslationResponseBody> {
         
         // Get the `Translation` model from the route parameters and convert it to a `TranslationResponseBody`.
-        return try request.parameter(Translation.self).response(on: request)
+        return try request.parameters.next(Translation.self).response(on: request)
     }
     
     /// Updates the data of a ` Translation` model.
     func update(_ request: Request, _ body: TranslationUpdateBody)throws -> Future<TranslationResponseBody> {
         
         // Get the model from the route paramaters.
-        return try request.parameter(Translation.self).flatMap(to: TranslationResponseBody.self, { (translation) in
+        return try request.parameters.next(Translation.self).flatMap(to: TranslationResponseBody.self, { (translation) in
             
             // Update the models properties from data in the request's body.
             translation.languageCode = body.languageCode ?? translation.languageCode
@@ -127,6 +127,6 @@ final class ModelTranslationController<Translation, Parent>: RouteCollection whe
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         
         // Get the model from the route parameters, delete the model, and return HTTP status 204 (No Content).
-        return try request.parameter(Translation.self).delete(on: request).transform(to: .noContent)
+        return try request.parameters.next(Translation.self).delete(on: request).transform(to: .noContent)
     }
 }

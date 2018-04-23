@@ -45,13 +45,14 @@ final class Price: Content, MySQLModel, Migration, Parameter {
             throw Abort(.badRequest, reason: "'currency' field must contain 3 letter characters. Found \(count)")
         }
         
-        let af = activeFrom ?? Date()
+        let af = activeFrom ?? Date.distantPast
         let at: Date = activeTo ?? Date.distantFuture
+        let currentDate = Date()
         
         self.cents = cents
         self.activeFrom = af
         self.activeTo = at
-        self.active = active ?? (Date() > af && Date() < at)
+        self.active = active ?? (currentDate > af && currentDate < at)
         self.currency = currency.uppercased()
     }
     

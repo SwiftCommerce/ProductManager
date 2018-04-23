@@ -101,14 +101,14 @@ extension Product {
         
         // See if a `minPrice` query was passed in. If so,
         // update the query data stores and logival checks.
-        if let min = try request.query.get(Float?.self, at: "minPrice") {
-            constraints.append("`\(Price.entity)`.`price` >= ?")
+        if let min = try request.query.get(Int?.self, at: "minPrice") {
+            constraints.append("`\(Price.entity)`.`cents` >= ?")
             paramaters.append(min)
             priceConstraints += 1
         }
         
-        if let max = try request.query.get(Float?.self, at: "maxPrice") {
-            constraints.append("`\(Price.entity)`.`price` <= ?")
+        if let max = try request.query.get(Int?.self, at: "maxPrice") {
+            constraints.append("`\(Price.entity)`.`cents` <= ?")
             paramaters.append(max)
             priceConstraints += 1
         }

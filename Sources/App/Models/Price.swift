@@ -9,15 +9,11 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     /// The database ID of the model.
     var id: Int?
     
-    /// The whole number portion of the price amount.
-    ///
-    /// $(xx).xx
-    var whole: Int
-    
-    /// The fraction portion of the price amount:
-    ///
-    /// $xx.(xx)
-    var fraction: Int
+    /// The amount the model's currency in cents
+    /// required to purchase the connected product.
+    /// - Note: We store cents because we avoid decimal
+    ///   inaccuracies by not using `Float` or `Double`.
+    var cents: Int
     
     /// The date the price became valid on.
     var activeFrom: Date
@@ -40,7 +36,7 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     ///   - activeFrom: The date the price starts being valid. If you pass in `nil`, it defaults to the time the price is created (`Date()`).
     ///   - activeTo: The date the price becomes invalid. If you pass in `nil`, it defaults to some time in the distant future (`Date.distantFuture`).
     ///   - active: Wheather or not the price is valid. If you pass in `nil`, the value is calculated of the `activeFrom` and `activeTo` dates.
-    init(whole: Int, fraction: Int, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
+    init(cents: Int, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
         guard
             (currency.count == 3 && currency.replacingOccurrences(of: "[^a-zA-Z]", with: "", options: .regularExpression) == currency) ||
             (currency == "1" || currency == "0")
@@ -49,15 +45,10 @@ final class Price: Content, MySQLModel, Migration, Parameter {
             throw Abort(.badRequest, reason: "'currency' field must contain 3 letter characters. Found \(count)")
         }
         
-        guard String(fraction).count == 2 else {
-            throw Abort(.badRequest, reason: "We don't support cent fractions. Your '\(CodingKeys.fraction.description)' key should have only 2 digits")
-        }
-        
         let af = activeFrom ?? Date()
         let at: Date = activeTo ?? Date.distantFuture
         
-        self.whole = whole
-        self.fraction = fraction
+        self.cents = cents
         self.activeFrom = af
         self.activeTo = at
         self.active = active ?? (Date() > af && Date() < at)
@@ -68,8 +59,7 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     convenience init(from decoder: Decoder)throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(
-            whole: container.decode(Int.self, forKey: .whole),
-            fraction: container.decode(Int.self, forKey: .fraction),
+            cents: container.decode(Int.self, forKey: .cents),
             activeFrom: container.decodeIfPresent(Date.self, forKey: .activeFrom),
             activeTo: container.decodeIfPresent(Date.self, forKey: .activeTo),
             active: container.decodeIfPresent(Bool.self, forKey: .active),
@@ -91,8 +81,7 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     /// - Returns: A void future, which will signal once the update is complete.
     func update(with body: PriceUpdateBody) -> Price {
         // Update all the properties if a value for it is found in the body, else use the old value.
-        self.whole = body.whole ?? self.whole
-        self.fraction = body.fraction ?? self.fraction
+        self.cents = body.cents ?? self.cents
         self.activeFrom = body.activeFrom ?? self.activeFrom
         self.activeTo = body.activeTo ?? self.activeTo
         self.active = body.active ?? self.active
@@ -105,10 +94,7 @@ final class Price: Content, MySQLModel, Migration, Parameter {
 struct PriceUpdateBody: Content {
     
     ///
-    let whole: Int?
-
-    ///
-    let fraction: Int?
+    let cents: Int?
     
     ///
     let activeFrom: Date?

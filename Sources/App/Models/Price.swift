@@ -42,10 +42,11 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     ///   - active: Wheather or not the price is valid. If you pass in `nil`, the value is calculated of the `activeFrom` and `activeTo` dates.
     init(whole: Int, fraction: Int, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
         guard
-            (currency.count == 3 && currency.replacingOccurrences(of: "\\d", with: "$1", options: .regularExpression) == currency) ||
+            (currency.count == 3 && currency.replacingOccurrences(of: "[^a-zA-Z]", with: "", options: .regularExpression) == currency) ||
             (currency == "1" || currency == "0")
         else {
-            throw Abort(.badRequest, reason: "'currency' field must contain 3 characters. Found \(currency.count)")
+            let count = currency.replacingOccurrences(of: "[^a-zA-Z]", with: "", options: .regularExpression).count
+            throw Abort(.badRequest, reason: "'currency' field must contain 3 letter characters. Found \(count)")
         }
         
         guard String(fraction).count == 2 else {

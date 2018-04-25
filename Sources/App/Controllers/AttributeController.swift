@@ -13,7 +13,15 @@ final class AttributeController: RouteCollection {
     ///
     /// - Parameter router: The router the register
     ///   the route handlers with.
-    func boot(router: Router) {}
+    func boot(router: Router) {
+        let attributes = router.grouped("attributes")
+        
+        attributes.post(Attribute.self, use: create)
+        attributes.get(use: index)
+        attributes.get(Attribute.parameter, use: show)
+        attributes.patch(AttributeBody.self, at: Attribute.parameter, use: update)
+        attributes.delete(Attribute.parameter, use: delete)
+    }
     
     /// Decodes an `Attribute` model from a request body
     /// and saves it to the database.

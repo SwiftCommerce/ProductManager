@@ -23,6 +23,10 @@ final class AttributeController: RouteCollection {
             return attribute.update(on: request)
         }
     }
+    
+    func delete(_ request: Request)throws -> Future<HTTPStatus> {
+        return try request.parameters.next(Attribute.self).delete(on: request).transform(to: .noContent)
+    }
 }
 
 struct AttributeBody: Content {

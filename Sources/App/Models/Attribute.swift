@@ -5,7 +5,7 @@ final class Attribute: Content, MySQLModel, Migration, Parameter {
     var id: Int?
     
     /// The name of the attribute, given by the user.
-    let name: String
+    var name: String
     
     /// The value of the attribute, given by the user.
     var type: String

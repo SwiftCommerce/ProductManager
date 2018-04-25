@@ -11,4 +11,8 @@ final class AttributeController: RouteCollection {
     func index(_ request: Request)throws -> Future<[Attribute]> {
         return Attribute.query(on: request).all()
     }
+    
+    func show(_ request: Request)throws -> Future<Attribute> {
+        return try request.parameters.next(Attribute.self)
+    }
 }

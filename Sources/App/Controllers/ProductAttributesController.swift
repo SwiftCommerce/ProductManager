@@ -28,6 +28,9 @@ final class ProductAttributesController: RouteCollection {
         // Register a PATCH endpoint at `/products/:product/attributes/:int`.
         attributes.patch(Int.parameter, use: update)
         
+        // Register a PATCH endpoint at `/products/:product/attributes/attach/:attribute`.
+        attributes.patch("attach", Attribute.parameter, use: attach)
+        
         // Register a DELETE endpoint at `/prodcuts/:prodcut/attributes/:attributes`.
         attributes.delete(Attribute.parameter, use: delete)
     }
@@ -110,6 +113,29 @@ final class ProductAttributesController: RouteCollection {
             
             // Gets the first element of the array (there should only be one or zero elements) and unwrap it.
         }).map(to: AttributeContent?.self, { $0.first }).unwrap(or: Abort(.notFound, reason: "No attribute connected to product with ID '\(id)'"))
+    }
+    
+    /// Attaches an `Attribute` model to a `Product` model
+    /// through a `ProductAttribute` pivot.
+    func attach(_ request: Request)throws -> Future<AttributeContent> {
+        
+        // Get the models to attach from the request paramaters/
+        let product = try request.parameters.next(Product.self)
+        let attribute = try request.parameters.next(Attribute.self)
+        
+        // Get the pivot metadata from the request body.
+        let value = try request.content.syncGet(String.self, at: "value")
+        let language = try request.content.syncGet(String.self, at: "language")
+        
+        return Async.flatMap(to: (ProductAttribute, Attribute).self, product, attribute) { product, attribute -> Future<(ProductAttribute, Attribute)> in
+            
+            // Connect the two models through a `ProductAttribute` pivot.
+            return try ProductAttribute(value: value, language: language, product: product, attribute: attribute).save(on: request).and(result: attribute)
+        }.map(to: AttributeContent.self) { contentData in
+            
+            // Convert the `Attribute` model and pivot to an `AttributeContent` instance.
+            return AttributeContent(attribute: contentData.1, pivot: contentData.0)
+        }
     }
     
     /// Detaches a given `Attribute` from its parent `Prodcut` model.

@@ -7,4 +7,8 @@ final class AttributeController: RouteCollection {
     func create(_ request: Request, _ attribute: Attribute)throws -> Future<Attribute> {
         return attribute.save(on: request)
     }
+    
+    func index(_ request: Request)throws -> Future<[Attribute]> {
+        return Attribute.query(on: request).all()
+    }
 }

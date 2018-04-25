@@ -2,7 +2,7 @@ import Fluent
 import Vapor
 
 /// A controller for all API endpoints that make operations on a product's attributes.
-final class AttributesController: RouteCollection {
+final class ProductAttributesController: RouteCollection {
     
     /// Required by the `RouteCollection` protocol.
     /// Allows you to run this to add your routes to a router:

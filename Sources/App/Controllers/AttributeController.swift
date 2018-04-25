@@ -15,4 +15,17 @@ final class AttributeController: RouteCollection {
     func show(_ request: Request)throws -> Future<Attribute> {
         return try request.parameters.next(Attribute.self)
     }
+    
+    func update(_ request: Request, _ body: AttributeBody)throws -> Future<Attribute> {
+        return try request.parameters.next(Attribute.self).flatMap(to: Attribute.self) { attribute in
+            attribute.name = body.name ?? attribute.name
+            attribute.type = body.type ?? attribute.type
+            return attribute.update(on: request)
+        }
+    }
+}
+
+struct AttributeBody: Content {
+    let name: String?
+    let type: String?
 }

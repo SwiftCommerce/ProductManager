@@ -2,7 +2,7 @@ import FluentMySQL
 import FluentSQL
 import Vapor
 
-final class ProductAttribute: MySQLPivot, Migration {
+final class ProductAttribute: MySQLPivot, ProductModel {
     typealias Left = Product
     typealias Right = Attribute
     
@@ -16,6 +16,10 @@ final class ProductAttribute: MySQLPivot, Migration {
     var language: String
     var productID: Product.ID
     var attributeID: Attribute.ID
+    
+    var createdAt: Date?
+    var updatedAt: Date?
+    var deletedAt: Date?
     
     init(value: String, language: String, product: Product, attribute: Attribute)throws {
         self.productID = try product.requireID()

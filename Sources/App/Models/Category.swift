@@ -1,5 +1,5 @@
 /// Used for categorizing a product.
-final class Category: Content, MySQLModel, Migration, Parameter {
+final class Category: ProductModel {
     
     /// The database ID of the model.
     var id: Int?
@@ -15,7 +15,10 @@ final class Category: Content, MySQLModel, Migration, Parameter {
     /// The name of the category.
     let name: String
     
-    ///
+    var createdAt: Date?
+    var updatedAt: Date?
+    var deletedAt: Date?
+    
     init(name: String, sort: Int, isMain: Bool) {
         self.name = name
         self.sort = sort
@@ -42,24 +45,25 @@ final class Category: Content, MySQLModel, Migration, Parameter {
 /// A representation of a `Category` model including sub-categories and translations.
 /// Returned from a route handler instead of a raw category for full data representation.
 struct CategoryResponseBody: Content {
-    
-    ///
     let id: Int?
-    
-    ///
     let name: String
-    
-    ///
     let sort: Int
-    
-    ///
     let isMain: Bool
-    
-    ///
+    let createdAt, updatedAt, deletedAt: Date?
     let subcategories: [CategoryResponseBody]
-    
-    ///
     let translations: [TranslationResponseBody]
+    
+    init(category: Category, subcategories: [CategoryResponseBody], translations: [TranslationResponseBody]) {
+        self.id = category.id
+        self.name = category.name
+        self.sort = category.sort
+        self.isMain = category.isMain
+        self.createdAt = category.createdAt
+        self.updatedAt = category.updatedAt
+        self.deletedAt = category.deletedAt
+        self.subcategories = subcategories
+        self.translations = translations
+    }
 }
 
 /// Extend `Promise` if it wraps a `CategoryResponseBody`.
@@ -90,14 +94,7 @@ extension Promise where T == CategoryResponseBody {
             Async.map(to: CategoryResponseBody.self, categories, category.translations(with: request)) { (subCategories, translations) in
                 
                 // Actually create the `CategoryResponseBody` with the data passed in.
-                return CategoryResponseBody(
-                    id: category.id,
-                    name: category.name,
-                    sort: category.sort,
-                    isMain: category.isMain,
-                    subcategories: subCategories,
-                    translations: translations.map({ TranslationResponseBody($0) })
-                )
+                return CategoryResponseBody(category: category, subcategories: subCategories, translations: translations.map({ TranslationResponseBody($0) }))
             }.do { (body) in
                 
                 // `CategoryResponseBody` creation succeded.

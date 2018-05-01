@@ -3,7 +3,7 @@ import Foundation
 import FluentSQL
 import Vapor
 
-extension Product {
+extension QueryBuilder where Model == Product, Result == Product {
     
     /// Gets all `Product` models from the database,
     /// filtering them based on the query-strings from a request.
@@ -26,14 +26,14 @@ extension Product {
     ///
     /// - Throws: Errors that occur when creating database queries.
     /// - Returns: All the `Product` model that match the query-strings from the request.
-    static func filter(on request: Request)throws -> Future<QueryBuilder<Product, Product>> {
+    func filter(on request: Request)throws -> Future<QueryBuilder<Product, Product>> {
         
         // Get valid IDs for the `Product` models we fetch.
         let productIDs = try [
             idsConstrainedWithPrice(with: request),
             idsConstrainedWithAttributes(with: request),
             idsConstrainedWithCategories(with: request)
-            ].flatten(on: request)
+        ].flatten(on: request)
         
         let cleanedIDs = productIDs.map(to: [Product.ID]?.self) { ids in
             
@@ -62,35 +62,29 @@ extension Product {
         }
         
         // Construct base query for getting `Product` models.
-        let query = cleanedIDs.map(to: QueryBuilder<Product, Product>.self) { validIDs in
-            let query = Product.query(on: request)
+        return cleanedIDs.map(to: QueryBuilder<Product, Product>.self) { validIDs in
             
             if let ids = validIDs {
-                try query.filter(\.id ~~ ids)
+                try self.filter(\.id ~~ ids)
             }
             if let status = try request.query.get(ProductStatus?.self, at: "status") {
-                try query.filter(\.status == status)
+                try self.filter(\.status == status)
             }
-            
-            return query
-        }
-        
-        return query.map(to: QueryBuilder<Product, Product>.self) { query in
             
             // If query parameters where passed in for pagination, limit the amount of models we fetch.
             if let page = try request.query.get(Int?.self, at: "page"), let results = try request.query.get(Int?.self, at: "results_per_page") {
                 
                 // Get all the models in the range specified by the query parameters passed in.
-                return query.range(lower: (results * page) - results, upper: (results * page))
+                return self.range(lower: (results * page) - results, upper: (results * page))
             } else {
                 
                 // Run the query to fetch all the rows from the `products` database table.
-                return query
+                return self
             }
         }
     }
     
-    private static func idsConstrainedWithPrice(with request: Request)throws -> Future<[Product.ID]?> {
+    private func idsConstrainedWithPrice(with request: Request)throws -> Future<[Product.ID]?> {
         
         // Setup base query, along with logical constrainst and paramaters storage.
         let priceQuery = "SELECT * FROM `\(Price.entity)` INNER JOIN `\(ProductPrice.entity)` ON `\(ProductPrice.entity)`.`priceID` = `\(Price.entity)`.`id`"
@@ -122,7 +116,7 @@ extension Product {
         }
     }
     
-    private static func idsConstrainedWithAttributes(with request: Request)throws -> Future<[Product.ID]?> {
+    private func idsConstrainedWithAttributes(with request: Request)throws -> Future<[Product.ID]?> {
         let futureAttributes: Future<[ProductID]>
         let filterCount: Int
         
@@ -164,7 +158,7 @@ extension Product {
         }
     }
     
-    private static func idsConstrainedWithCategories(with request: Request)throws -> Future<[Product.ID]?> {
+    private func idsConstrainedWithCategories(with request: Request)throws -> Future<[Product.ID]?> {
         let futureCategories: Future<[ProductID]>
         let categoryCount: Int
         

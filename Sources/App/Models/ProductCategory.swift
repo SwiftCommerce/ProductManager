@@ -1,5 +1,5 @@
 // A pivot model for connecting `Category` models to a `Product` model.
-final class ProductCategory: MySQLPivot, Migration {
+final class ProductCategory: MySQLPivot, ProductModel {
     typealias Left = Product
     typealias Right = Category
     
@@ -7,9 +7,13 @@ final class ProductCategory: MySQLPivot, Migration {
     static var rightIDKey: WritableKeyPath<ProductCategory, Int> = \.categoryID
     static let entity: String = "productCategories"
     
+    var id: Int?
     var productID: Product.ID
     var categoryID: Category.ID
-    var id: Int?
+    
+    var createdAt: Date?
+    var updatedAt: Date?
+    var deletedAt: Date?
     
     /// Create a pivot from a `Product` and `Attribute` model.
     init(product: Product, category: Category)throws {

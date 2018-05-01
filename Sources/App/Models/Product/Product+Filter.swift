@@ -1,8 +1,7 @@
-import Vapor
-import Fluent
-import FluentSQL
-
+import FluentMySQL
 import Foundation
+import FluentSQL
+import Vapor
 
 extension Product {
     
@@ -27,14 +26,14 @@ extension Product {
     ///
     /// - Throws: Errors that occur when creating database queries.
     /// - Returns: All the `Product` model that match the query-strings from the request.
-    static func filter(on request: Request)throws -> Future<[Product]> {
+    static func filter(on request: Request)throws -> Future<QueryBuilder<Product, Product>> {
         
         // Get valid IDs for the `Product` models we fetch.
         let productIDs = try [
             idsConstrainedWithPrice(with: request),
             idsConstrainedWithAttributes(with: request),
             idsConstrainedWithCategories(with: request)
-        ].flatten(on: request)
+            ].flatten(on: request)
         
         let cleanedIDs = productIDs.map(to: [Product.ID]?.self) { ids in
             
@@ -76,17 +75,17 @@ extension Product {
             return query
         }
         
-        return query.flatMap(to: [Product].self) { query in
+        return query.map(to: QueryBuilder<Product, Product>.self) { query in
             
             // If query parameters where passed in for pagination, limit the amount of models we fetch.
             if let page = try request.query.get(Int?.self, at: "page"), let results = try request.query.get(Int?.self, at: "results_per_page") {
-    
+                
                 // Get all the models in the range specified by the query parameters passed in.
-                return query.range(lower: (results * page) - results, upper: (results * page)).all()
+                return query.range(lower: (results * page) - results, upper: (results * page))
             } else {
-    
+                
                 // Run the query to fetch all the rows from the `products` database table.
-                return query.all()
+                return query
             }
         }
     }
@@ -140,7 +139,7 @@ extension Product {
                 // The querstion-marks are placeholders in the query.
                 // They are replaced with the `parameters` values passed into the `.raw` method.
                 return "(`\(Attribute.entity)`.`name` = ? AND `\(ProductAttribute.entity)`.`value` = ?)"
-            }.joined(separator: " OR ")
+                }.joined(separator: " OR ")
             attributeQuery += " WHERE \(whereClause)"
             
             futureAttributes = ProductID.raw(attributeQuery, with: paraneters, on: request)
@@ -194,3 +193,4 @@ struct ProductID: MySQLModel {
     var id: Int?
     let productID: Product.ID
 }
+

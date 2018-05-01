@@ -4,7 +4,7 @@
 /// A product is connected to 0 or more user-defined `Attribute` models to store custom data about the product.
 /// A product is connected to 0 or more `Translation` models, whicg are each connected to a price for the product
 /// in the currency of the location for the given translation.
-final class Product: Content, MySQLModel, Migration, Parameter {
+final class Product: ProductModel {
     
     /// The database ID of the model.
     var id: Int?
@@ -16,7 +16,10 @@ final class Product: Content, MySQLModel, Migration, Parameter {
     /// This could be `draft`, `published`, or one of other cases.
     var status: ProductStatus
     
-    ///
+    var createdAt: Date?
+    var updatedAt: Date?
+    var deletedAt: Date?
+    
     init(sku: String, status: ProductStatus) {
         self.sku = sku
         self.status = status
@@ -87,27 +90,27 @@ final class Product: Content, MySQLModel, Migration, Parameter {
 /// This model is returned from a route instead of a raw product,
 /// Giving the client more information then just the `sku`.
 struct ProductResponseBody: Content {
-    
-    ///
     let id: Int?
-    
-    ///
     let sku: String
-    
-    ///
     let status: ProductStatus
-    
-    ///
+    let createdAt, updatedAt, deletedAt: Date?
     let attributes: [AttributeContent]
-    
-    ///
     let translations: [TranslationResponseBody]
-    
-    ///
     let categories: [CategoryResponseBody]
-    
-    ///
     let prices: [Price]
+    
+    init(product: Product, attributes: [AttributeContent], translations: [TranslationResponseBody], categories: [CategoryResponseBody], prices: [Price]) {
+        self.id = product.id
+        self.sku = product.sku
+        self.status = product.status
+        self.createdAt = product.createdAt
+        self.updatedAt = product.updatedAt
+        self.deletedAt = product.deletedAt
+        self.attributes = attributes
+        self.translations = translations
+        self.categories = categories
+        self.prices = prices
+    }
 }
 
 /// Extend `Promise` if it wraps a `ProductResponseBody`.
@@ -144,15 +147,7 @@ extension Promise where T == ProductResponseBody {
             
             // Once all the queries have complete, take the data, create a `ProductResponseBody` from the data, and return it.
             Async.map(to: ProductResponseBody.self, attributes, translations, categories, prices) { (attributes, translations, categories, prices) in
-                return ProductResponseBody(
-                    id: product.id,
-                    sku: product.sku,
-                    status: product.status,
-                    attributes: attributes,
-                    translations: translations,
-                    categories: categories,
-                    prices: prices
-                )
+                return ProductResponseBody(product: product, attributes: attributes, translations: translations, categories: categories, prices: prices)
             }.do { (body) in
                 
                 // The `ProductResponseBody` was succesfuly created,

@@ -39,20 +39,20 @@
       },
       {
         "package": "Fluent",
-        "repositoryURL": "https://github.com/calebkleveter/fluent.git",
+        "repositoryURL": "https://github.com/vapor/fluent.git",
         "state": {
           "branch": null,
-          "revision": "9c23012f55489aa056212c6f905fe6e6213e5843",
-          "version": "3.0.0-rc.2.3.2.1"
+          "revision": "99ff18dd3ca85705170de915ed71e33983060acb",
+          "version": "3.0.0-rc.2.4"
         }
       },
       {
         "package": "FluentMySQL",
-        "repositoryURL": "https://github.com/calebkleveter/fluent-mysql.git",
+        "repositoryURL": "https://github.com/vapor/fluent-mysql.git",
         "state": {
           "branch": null,
-          "revision": "8ab36f4162c6ffc5bb4a5392f3f28939cae31d5e",
-          "version": "3.0.0-rc.2.3.1"
+          "revision": "19956a04b1983f20879d9c770a49d7948c42b270",
+          "version": "3.0.0-rc.2.4"
         }
       },
       {
@@ -97,6 +97,15 @@
         "state": {
           "branch": null,
           "revision": "281a70b69783891900be31a9e70051b6fe19e146",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "package": "SQL",
+        "repositoryURL": "https://github.com/vapor/sql.git",
+        "state": {
+          "branch": null,
+          "revision": "1bb94271d8645b6d6983721080ad642aa35d749c",
           "version": "1.0.0"
         }
       },

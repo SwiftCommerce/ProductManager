@@ -24,7 +24,7 @@ extension QueryBuilder {
 }
 
 extension Model {
-    
+
     /// Allows you to run raw queries in a model type.
     /// The data from the query is decoded to the type the method is called on.
     ///
@@ -34,9 +34,9 @@ extension Model {
     ///   - connector: The object to create a connection to the database with.
     /// - Returns: An array of model instances created from the fetched data, wrapped in a future.
     static func raw(_ query: String, with parameters: [MySQLDataConvertible] = [], on connector: DatabaseConnectable) -> Future<[Self]> {
-        
+
         // I would document this, but I hope it get Sherlocked by Fluent.
-        return connector.connect(to: .mysql).flatMap(to: [[MySQLColumn : MySQLData]].self) { (connection) in
+        return connector.databaseConnection(to: .mysql).flatMap(to: [[MySQLColumn : MySQLData]].self) { (connection) in
             connection.log(query: query, with: parameters)
             return connection.query(query, parameters)
         }.map(to: [Self].self, { (data) in
@@ -67,17 +67,17 @@ extension MySQLConnection {
                 
                 // Create a formatted message with the query, parameters, and timestamp.
                 let log = DatabaseLog(
+                    dbuid: "mysql",
                     query: query,
-                    values: try parameters.map { try $0.convertToMySQLData().description },
-                    dbID: "mysql"
+                    values: try parameters.map { try $0.convertToMySQLData().description }
                 )
                 
                 // Log the message.
-                logger.record(log: log)
+                logger.record(query: log.description)
             }
         } catch {
             // Converting the paramaters passed in to `MySQLData` failed. Signify the failure to log.
-            print(DatabaseLog(query: "Logging failed. Unable to get parameter descriptions.", dbID: "mysql"))
+            print(DatabaseLog(dbuid: "mysql", query: "Logging failed. Unable to get parameter descriptions."))
         }
     }
 }

@@ -29,7 +29,7 @@ public func configure(
     services.register(middlewares)
 
     // Configure a MySQL database.
-    var databases = DatabaseConfig()
+    var databases = DatabasesConfig()
     
     if !env.isRelease {
         databases.enableLogging(on: .mysql)

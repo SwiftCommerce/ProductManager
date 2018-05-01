@@ -37,6 +37,11 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     ///   - activeTo: The date the price becomes invalid. If you pass in `nil`, it defaults to some time in the distant future (`Date.distantFuture`).
     ///   - active: Wheather or not the price is valid. If you pass in `nil`, the value is calculated of the `activeFrom` and `activeTo` dates.
     init(cents: Int, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
+        
+        // Use some odd verification fot the 'currency' value.
+        // It should be a three lettter character string.
+        
+        // We check for 0 and 1 so `RefletionDecodable` works.
         guard
             (currency.count == 3 && currency.replacingOccurrences(of: "[^a-zA-Z]", with: "", options: .regularExpression) == currency) ||
             (currency == "1" || currency == "0")

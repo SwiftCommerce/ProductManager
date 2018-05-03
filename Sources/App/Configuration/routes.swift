@@ -7,7 +7,7 @@ public func routes(_ router: Router) throws {
     // which is used by ths host's load balancer to
     // direct to the correct services, while at the
     // same time allowing us to ignore the value.
-    let versioned = router.grouped(any)
+    let versioned = router.grouped(any).grouped(ModificationProtectionMiddleware())
     
     // Register all the controllers with the application's router.
     try versioned.register(collection: PriceController())

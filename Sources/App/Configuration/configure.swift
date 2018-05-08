@@ -30,8 +30,7 @@ public func configure(
     // Register middleware with the app's services.
     // These middleware will automaticly be added to all routes.
     var middlewares = MiddlewareConfig() // Create _empty_ middleware config
-    middlewares.use(CORSMiddleware(configuration: .default)) // Adds Cross-Origin-Request headers to all responses
-    middlewares.use(DateMiddleware.self) // Adds `Date` header to responses
+    middlewares.use(CORSMiddleware()) // Adds Cross-Origin-Request headers to all responses
     middlewares.use(ErrorMiddleware.self) // Catches errors and converts to HTTP response
     services.register(middlewares)
 

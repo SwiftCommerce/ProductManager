@@ -36,12 +36,12 @@ extension Model {
     static func raw(_ query: String, with parameters: [MySQLDataConvertible] = [], on connector: DatabaseConnectable) -> Future<[Self]> {
 
         // I would document this, but I hope it get Sherlocked by Fluent.
-        return connector.databaseConnection(to: .mysql).flatMap(to: [[MySQLColumn : MySQLData]].self) { (connection) in
+        return connector.databaseConnection(to: .mysql).flatMap(to: [[MySQLColumn : MySQLData]].self) { connection in
             connection.log(query: query, with: parameters)
             return connection.query(query, parameters)
         }.map(to: [Self].self, { (data) in
             return try data.map({ row -> Self in
-                let genericData: [QueryField: MySQLData] = row.reduce(into: [:]) { (row, cell) in
+                let genericData: [QueryField: MySQLData] = row.reduce(into: [:]) { row, cell in
                     row[QueryField(entity: cell.key.table, name: cell.key.name)] = cell.value
                 }
                 return try QueryDataDecoder(MySQLDatabase.self, entity: Self.entity).decode(Self.self, from: genericData)

@@ -8,9 +8,9 @@ extension Future where T: Collection {
     ///   - transform: The method to call on the elements in the collection.
     /// - Returns: An array of the results of the `transform` method passed in, wrapped in a future.
     func each<R>(to: R.Type, transform: @escaping (T.Element)throws -> Future<R>) -> Future<[R]> {
-        return self.flatMap(to: [R].self, { (sequence) in
+        return self.flatMap(to: [R].self) { sequence in
             return try sequence.map(transform).flatten(on: self.eventLoop)
-        })
+        }
     }
 }
 

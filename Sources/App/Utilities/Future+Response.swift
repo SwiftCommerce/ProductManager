@@ -29,7 +29,7 @@ extension Future where T == Product {
     }
 }
 
-/// Extend `Future` if it wraps a model conforming to `Trnslation`.
+/// Extend `Future` if it wraps a model conforming to `Translation`.
 extension Future where T: Translation {
     
     /// Create a publicizable represention of the wrapped model, appropriate for returning as JSON.

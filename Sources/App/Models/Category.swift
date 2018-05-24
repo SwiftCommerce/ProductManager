@@ -29,14 +29,13 @@ final class Category: ProductModel {
     ///
     /// - parameter executor: The object used to run the query for getting the translations.
     /// - returns: All the translations that are connected to the category through pivot models.
-    func translations(with executor: DatabaseConnectable) -> Future<[CategoryTranslation]> {
+    func translations(with executor: DatabaseConnectable)throws -> Future<[CategoryTranslation]> {
         
         // Verfiy the model has an ID.
-        return self.assertID(on: executor).flatMap(to: [CategoryTranslation].self, { (id) in
-            
-            // Fetch and return connected translations.
-            return try self.translations(on: executor).all()
-        })
+        _ = try self.requireID()
+        
+        // Fetch and return connected translations.
+        return try self.translations(on: executor).all()
     }
 }
 
@@ -91,7 +90,7 @@ extension Promise where T == CategoryResponseBody {
             }
             
             // Get the sub-categories and translations, convert them to a `CategoryResponseBody`, and assign self.
-            Async.map(to: CategoryResponseBody.self, categories, category.translations(with: request)) { (subCategories, translations) in
+            try Async.map(to: CategoryResponseBody.self, categories, category.translations(with: request)) { (subCategories, translations) in
                 
                 // Actually create the `CategoryResponseBody` with the data passed in.
                 return CategoryResponseBody(category: category, subcategories: subCategories, translations: translations.map({ TranslationResponseBody($0) }))

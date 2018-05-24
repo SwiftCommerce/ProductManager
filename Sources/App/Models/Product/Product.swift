@@ -29,14 +29,13 @@ final class Product: ProductModel {
     ///
     /// - Parameter executor: The object used to run the query to fetch the trsnlations from the database.
     /// - Returns: The related translations, wrapped in a future.
-    func translations(with request: Request) -> Future<[ProductTranslation]> {
+    func translations(with request: Request)throws -> Future<[ProductTranslation]> {
         
         // Confirm the model has in ID, return the results of the `.flatMap` callback.
-        return self.assertID(on: request).flatMap(to: [ProductTranslation].self, { (id) in
-            
-            // Return all the `ProductTranslation`s connected to the current model through pivots.
-            return try self.translations(on: request).all()
-        })
+        _ = try self.requireID()
+        
+        // Return all the `ProductTranslation`s connected to the current model through pivots.
+        return try self.translations(on: request).all()
     }
     
     /// Gets all the `Category` model that are connected to the current `Product` model though `ProductCategory` pivots.
@@ -136,7 +135,7 @@ extension Promise where T == ProductResponseBody {
             let prices = try product.prices.query(on: request).all()
             
             // Get all the translations connected to the product and convert them to their response type.
-            let translations = product.translations(with: request).flatMap(to: [TranslationResponseBody].self) { $0.map({ translation in
+            let translations = try product.translations(with: request).flatMap(to: [TranslationResponseBody].self) { $0.map({ translation in
                 return translation.response(on: request)
             }).flatten(on: request) }
             

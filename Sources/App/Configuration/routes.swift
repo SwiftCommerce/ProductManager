@@ -3,6 +3,10 @@
 /// [Learn More →](https://docs.vapor.codes/3.0/getting-started/structure/#routesswift)
 public func routes(_ router: Router) throws {
     
+    router.get("products", "health") { (request) in
+        return "All Good!"
+    }
+    
     // Register all the controllers with the application's router.
     try router.register(collection: PriceController())
     try router.register(collection: ProductController())

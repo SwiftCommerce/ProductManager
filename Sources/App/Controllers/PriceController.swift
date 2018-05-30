@@ -51,14 +51,14 @@ final class PriceController: RouteCollection {
         
         // Gets the `Price` models ID from the route parameters
         // and get the model with that ID from the database
-        return try request.parameter(Price.self)
+        return try request.parameters.next(Price.self)
     }
     
     /// Updates tha values of a `Price` model that are found in the request body.
     func update(_ request: Request, _ content: PriceUpdateBody)throws -> Future<Price> {
         
         // Gets the `Price` with the ID that is in the route's parameters
-        return try request.parameter(Price.self).flatMap(to: Price.self) { price in
+        return try request.parameters.next(Price.self).flatMap(to: Price.self) { price in
             
             // Update the model's properties that have new values and save it.
             return price.update(with: content).save(on: request)
@@ -69,6 +69,6 @@ final class PriceController: RouteCollection {
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         
         // Find the model with the ID in the route paramaters, delete it, and return a 204 (No Content) status code.
-        return try request.parameter(Price.self).delete(on: request).transform(to: .noContent)
+        return try request.parameters.next(Price.self).delete(on: request).transform(to: .noContent)
     }
 }

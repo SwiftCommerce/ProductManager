@@ -43,7 +43,7 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
     func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {
         
         // Get `Parent` model from request route paramaters.
-        return try request.parameter(Parent.self).flatMap(to: [Translation].self, { (parent) in
+        return try request.parameters.next(Parent.self).flatMap(to: [Translation].self, { (parent) in
             
             // Get all translations connected to the parent.
             let translations = try parent.translations(on: request)
@@ -67,8 +67,8 @@ where Parent: MySQLModel & Parameter & TranslationParent, Parent.ResolvedParamet
     func remove(_ request: Request)throws -> Future<HTTPStatus> {
         
         // Get the models from the request route parameters.
-        let product = try request.parameter(Parent.self)
-        let translation = try request.parameter(Translation.self)
+        let product = try request.parameters.next(Parent.self)
+        let translation = try request.parameters.next(Translation.self)
         
         return flatMap(to: HTTPStatus.self, product, translation, { (product, translation) in
             

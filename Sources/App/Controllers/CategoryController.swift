@@ -65,7 +65,7 @@ final class CategoryController: RouteCollection {
     func show(_ request: Request)throws -> Future<CategoryResponseBody> {
         
         /// Get the `Category` model passed into the request's route parameters and convert it to a `CategoryResponseBody`.
-        return try request.parameter(Category.self).response(on: request)
+        return try request.parameters.next(Category.self).response(on: request)
     }
    
     /// Updates the sub-categories of a given `Category` model.
@@ -76,7 +76,7 @@ final class CategoryController: RouteCollection {
         let detach = Category.query(on: request).models(where: \Category.id, in: categories.detach)
         
         // Get the category to update from route parameters.
-        let category = try request.parameter(Category.self)
+        let category = try request.parameters.next(Category.self)
         
         
         return Async.flatMap(to: Category.self, category, attach, detach) { (category, attach, detach) in
@@ -101,7 +101,7 @@ final class CategoryController: RouteCollection {
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         
         // Get the category in the request's route parameters.
-        return try request.parameter(Category.self).flatMap(to: Category.self, { (category) in
+        return try request.parameters.next(Category.self).flatMap(to: Category.self, { (category) in
             
             // Delete all connections to category from products and categories.
             let detachCategories = category.subCategories.deleteConnections(on: request)

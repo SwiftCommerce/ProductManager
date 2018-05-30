@@ -37,7 +37,7 @@ final class AttributesController: RouteCollection {
     func create(_ request: Request, _ content: AttributeContent)throws -> Future<AttributeContent> {
         
         // Get the `Product` model from the route parameters.
-        let parent = try request.parameter(Product.self)
+        let parent = try request.parameters.next(Product.self)
         
         // Get the amount of attributes that already exist in the database with the name of the new attribute.
         let attributeCount = parent.flatMap(to: Int.self) { (product) in
@@ -67,17 +67,17 @@ final class AttributesController: RouteCollection {
     func index(_ request: Request)throws -> Future<[AttributeContent]> {
         
         // Get the `Product` model from the route path, get all of the `Attribute` models connected to it, and return them.
-        return try request.parameter(Product.self).flatMap(to: [AttributeContent].self, { try $0.attributes.response(on: request) })
+        return try request.parameters.next(Product.self).flatMap(to: [AttributeContent].self, { try $0.attributes.response(on: request) })
     }
     
     /// Get an `Attribute` connected to a `Product` with a specified ID.
     func show(_ request: Request)throws -> Future<AttributeContent> {
         
         // Get the `Int` parameter from the request's path.
-        let id = try request.parameter(Int.self)
+        let id = try request.parameters.next(Int.self)
         
         // Get the `Product` model specified in the route path.
-        return try request.parameter(Product.self).flatMap(to: [AttributeContent].self) { (product) in
+        return try request.parameters.next(Product.self).flatMap(to: [AttributeContent].self) { (product) in
             
             // Get the first attribute with the `Int` parameter as it's ID from all attributes connected to the product.
             return try product.attributes.response(on: request, pivotQuery: ProductAttribute.query(on: request).filter(\.attributeID == id))
@@ -90,10 +90,10 @@ final class AttributesController: RouteCollection {
     func update(_ request: Request)throws -> Future<AttributeContent> {
         
         // Get the specified `Product` model from the request's route parameters.
-        let product = try request.parameter(Product.self)
+        let product = try request.parameters.next(Product.self)
         
         // Get the ID of the attribute to update.
-        let id = try request.parameter(Int.self)
+        let id = try request.parameters.next(Int.self)
         
         // Get the new value fore the for the `Attribute` model.
         let newValue = request.content.get(String.self, at: "value")
@@ -116,7 +116,7 @@ final class AttributesController: RouteCollection {
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         
         // Get the `Paroduct` and `Attribute` models passed into the request's route parameters.
-        return try flatMap(to: HTTPStatus.self, request.parameter(Product.self), request.parameter(Attribute.self), { (product, attribute) in
+        return try flatMap(to: HTTPStatus.self, request.parameters.next(Product.self), request.parameters.next(Attribute.self), { (product, attribute) in
             
             // Get the prodcut's attributes, and detach the attribute passed in.
             return product.attributes.detach(attribute, on: request).transform(to: .noContent)

@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/vapor/auth.git",
         "state": {
           "branch": null,
-          "revision": "c88227ea542c2a2b699d8f5b9f44531248902584",
-          "version": "2.0.0-rc.3.1"
+          "revision": "b84242ee3d450516b050f7a64fc0b81604f56077",
+          "version": "2.0.0-rc.4.1"
         }
       },
       {
@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/vapor/core.git",
         "state": {
           "branch": null,
-          "revision": "efe79e4f59445b661ba7e6511c2a0b80645c2e72",
-          "version": "3.1.6"
+          "revision": "174f909bc048a6aff27d6cb4c31810971f912cca",
+          "version": "3.2.2"
         }
       },
       {
@@ -60,8 +60,8 @@
         "repositoryURL": "https://github.com/vapor/fluent-mysql.git",
         "state": {
           "branch": null,
-          "revision": "19956a04b1983f20879d9c770a49d7948c42b270",
-          "version": "3.0.0-rc.2.4"
+          "revision": "d8880a9325dfe76d1464436fda15894b831f1d77",
+          "version": "3.0.0-rc.2.5"
         }
       },
       {
@@ -69,8 +69,8 @@
         "repositoryURL": "https://github.com/vapor/http.git",
         "state": {
           "branch": null,
-          "revision": "9246340ae4c5310627099349fc74785267b55607",
-          "version": "3.0.5"
+          "revision": "8123ea00e9858b369cd168d0303d33e7d3804d19",
+          "version": "3.0.7"
         }
       },
       {
@@ -87,8 +87,8 @@
         "repositoryURL": "https://github.com/skelpo/JWTMiddleware.git",
         "state": {
           "branch": null,
-          "revision": "e88d78bc5ec9dcf1947d4973d057a2e11cd5f227",
-          "version": "0.6.0"
+          "revision": "7530c7956865e7892ff338108e8e5fc87687bcaa",
+          "version": "0.7.0"
         }
       },
       {
@@ -96,8 +96,8 @@
         "repositoryURL": "https://github.com/skelpo/JWTVapor.git",
         "state": {
           "branch": null,
-          "revision": "9bab7ab42dc1e5d91d42982accb4e2e01c9327f3",
-          "version": "0.9.0"
+          "revision": "b35830ac59d79b7f8067834baeef666ecb7ac769",
+          "version": "0.11.0"
         }
       },
       {
@@ -150,8 +150,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio.git",
         "state": {
           "branch": null,
-          "revision": "a5db2a67515ad2b490ac5646db204a5edf939f47",
-          "version": "1.6.1"
+          "revision": "77dc77b9b5cdddfb3c385c5ee6cb74153d284967",
+          "version": "1.7.2"
         }
       },
       {
@@ -159,8 +159,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio-ssl.git",
         "state": {
           "branch": null,
-          "revision": "38955a5f806a952daf2b16fbfe9aa529749cf1dd",
-          "version": "1.1.0"
+          "revision": "0adc938bc8de3d3829b842f9767d81c7480b8403",
+          "version": "1.1.1"
         }
       },
       {
@@ -195,8 +195,8 @@
         "repositoryURL": "https://github.com/vapor/url-encoded-form.git",
         "state": {
           "branch": null,
-          "revision": "8448fa943057c01220f6a940d3b1b8e9fd92a96e",
-          "version": "1.0.2"
+          "revision": "57cf7fb9c1a1014c50bc05123684a9139ad44127",
+          "version": "1.0.3"
         }
       },
       {
@@ -213,8 +213,8 @@
         "repositoryURL": "https://github.com/vapor/vapor.git",
         "state": {
           "branch": null,
-          "revision": "821184be792dfa144a82fe379784e04eb9dad1eb",
-          "version": "3.0.1"
+          "revision": "39b4d3fa36e58c6f7415c9da6c65a703bec34cea",
+          "version": "3.0.3"
         }
       },
       {
@@ -222,8 +222,8 @@
         "repositoryURL": "https://github.com/skelpo/vapor-request-storage.git",
         "state": {
           "branch": null,
-          "revision": "5db9ea747b8ef2c3e9df40cf2de906a6707aedc2",
-          "version": "0.3.0"
+          "revision": "8b78db172e07c6d616b85966177f195bed3936b2",
+          "version": "0.4.0"
         }
       },
       {
@@ -231,8 +231,8 @@
         "repositoryURL": "https://github.com/vapor/websocket.git",
         "state": {
           "branch": null,
-          "revision": "23acd21aa37a200faa2f5d5525c974efa6b5676c",
-          "version": "1.0.0"
+          "revision": "141cb4d3814dc8062cb0b2f43e72801b5dfcf272",
+          "version": "1.0.1"
         }
       }
     ]

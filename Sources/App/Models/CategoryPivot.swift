@@ -28,8 +28,7 @@ final class CategoryPivot: MySQLPivot, Migration {
         guard left != right else {
             throw FluentError(
                 identifier: "identicalCategoryIDs",
-                reason: "Can't create a `CategoryPivot` instance with with the same model for both the left and right categories.",
-                source: .capture()
+                reason: "Can't create a `CategoryPivot` instance with with the same model for both the left and right categories."
             )
         }
         
@@ -54,8 +53,8 @@ extension Category {
         let pivot = try CategoryPivot(self, category)
         
         // Get the number of pivots that the current category is already connected to.
-        let leftCount = try CategoryPivot.query(on: executor).filter(\.left == self.id).filter(\.right == category.id).count()
-        let rightCount = try CategoryPivot.query(on: executor).filter(\.right == self.id).filter(\.left == category.id).count()
+        let leftCount = try CategoryPivot.query(on: executor).filter(\CategoryPivot.left == self.requireID()).filter(\CategoryPivot.right == category.requireID()).count()
+        let rightCount = try CategoryPivot.query(on: executor).filter(\CategoryPivot.right == self.requireID()).filter(\CategoryPivot.left == category.requireID()).count()
         
         return flatMap(to: Void.self, leftCount, rightCount) { (left, right) in
             guard left < 1 && right < 1 else {

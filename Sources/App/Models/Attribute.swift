@@ -1,5 +1,6 @@
 /// A custom, user-defined attribute for a product
 final class Attribute: ProductModel {
+    static let entity: String = "attributes"
     
     /// The database ID of the model.
     var id: Int?

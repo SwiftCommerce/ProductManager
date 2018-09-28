@@ -16,9 +16,13 @@ public func configure(
     
     // Registers a `JWTService` for verifying
     // incoming access tokens.
-    try services.register(JWTProvider { n in
-        return try RSAService(n: n, e: "AQAB")
-    })
+    let jwtProvider = JWTProvider { n, d in
+        guard let d = d else { throw Abort(.internalServerError, reason: "Could not find environment variable 'JWT_SECRET'", identifier: "missingEnvVar") }
+        
+        let headers = JWTHeader(alg: "RS256", crit: ["exp", "aud"], kid: "")
+        return try RSAService(n: n, e: "AQAB", d: d, header: headers)
+    }
+    try services.register(jwtProvider)
 
     // Create a router,
     // register all the app's routes to it,

@@ -2,7 +2,7 @@ import FluentMySQL
 import Vapor
 
 /// The basic structure of a model in this service.
-protocol ProductModel: Content, MySQLModel, Migration, Parameter, Timestampable, SoftDeletable {
+protocol ProductModel: Content, MySQLModel, Migration, Parameter {
     
     /// The date/time that the model was
     /// saved to the database.
@@ -23,24 +23,15 @@ protocol ProductModel: Content, MySQLModel, Migration, Parameter, Timestampable,
 
 extension ProductModel {
     
-    /// The date at which this model was created.
-    /// nil if the model has not been created yet.
-    static var createdAtKey: CreatedAtKey {
+    static var createdAtKey: WritableKeyPath<Self, Date?> {
         return \.createdAt
     }
     
-    /// The date at which this model was last updated.
-    /// nil if the model has not been created yet.
-    static var updatedAtKey: UpdatedAtKey {
+    static var updatedAtKey: WritableKeyPath<Self, Date?> {
         return \.updatedAt
     }
     
-    /// The date at which this model was deleted.
-    /// nil if the model has not been deleted yet.
-    /// If this property is true, the model will not
-    /// be included in any query results unless
-    /// `.withSoftDeleted()` is used.
-    static var deletedAtKey: DeletedAtKey {
+    static var deletedAtKey: WritableKeyPath<Self, Date?> {
         return \.deletedAt
     }
 }

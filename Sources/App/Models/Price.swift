@@ -5,6 +5,7 @@ import Vapor
 /// A `Price` connects to a `Product` model through the
 /// `ProductPrice` pivot model.
 final class Price: Content, MySQLModel, Migration, Parameter {
+    static let entity: String = "prices"
     
     /// The database ID of the model.
     var id: Int?

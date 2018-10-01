@@ -1,5 +1,6 @@
 /// Used for categorizing a product.
 final class Category: ProductModel {
+    static let entity: String = "categories"
     
     /// The database ID of the model.
     var id: Int?

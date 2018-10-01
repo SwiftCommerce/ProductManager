@@ -2,7 +2,7 @@ import FluentMySQL
 import Foundation
 import FluentSQL
 import Vapor
-
+/*
 extension QueryBuilder where Model == Product, Result == Product {
     
     /// Gets all `Product` models from the database,
@@ -187,4 +187,4 @@ struct ProductID: MySQLModel {
     var id: Int?
     let productID: Product.ID
 }
-
+*/

@@ -1,5 +1,6 @@
-import Fluent
+
 import Vapor
+import Fluent
 
 /// A controller for all API endpoints that make operations on a product's attributes.
 final class ProductAttributesController: RouteCollection {
@@ -96,7 +97,7 @@ final class ProductAttributesController: RouteCollection {
         let product = try request.parameters.next(Product.self)
         
         // Get the ID of the attribute to update.
-        let id = try request.parameters.next(Int.self)
+        let id:Int = try request.parameters.next(Int.self)
         
         // Get the new value fore the for the `Attribute` model.
         let newValue = request.content.get(String.self, at: "value")
@@ -105,7 +106,8 @@ final class ProductAttributesController: RouteCollection {
         return flatMap(to: Product.self, product, newValue, { (product, newValue) in
             
             // Find the attribute connected to the product with the ID passed in, update its `value` property, and return the product.
-            return try product.attributes.query(on: request).filter(\Attribute.id == id).update(\Attribute.type, to: newValue).transform(to: product)
+            let idKeyPath:KeyPath = \Attribute.id // the compiler is stupid and doesn't automatically recognize it as a key path
+            return try product.attributes.query(on: request).filter(idKeyPath == id).update(\Attribute.type, to: newValue).all().transform(to: product)
         }).flatMap(to: [AttributeContent].self, { product in
             
             // `QueryBuilder.update` returns `Future<Void>`, so to get the updated attribute, we need to run another query.

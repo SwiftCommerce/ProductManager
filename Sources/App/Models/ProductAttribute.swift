@@ -51,14 +51,14 @@ extension Siblings where Base == Product, Related == Attribute, Through == Produ
     ///     is passed in, we default to getting all the pivots.
     ///
     /// - Returns: An array of `AttributeContent`, wrapped in a future.
-    func response(on request: Request, pivotQuery: QueryBuilder<ProductAttribute, ProductAttribute>? = nil)throws -> Future<[AttributeContent]> {
+    func response(on request: Request, pivotQuery: QueryBuilder<ProductAttribute.Database, ProductAttribute>? = nil)throws -> Future<[AttributeContent]> {
         
         // Get all the attributes models connected to the pivots
         // from the pivot query.
         let pivots = try (pivotQuery ?? self.pivots(on: request)).all()
         let attributes = pivots.flatMap(to: [Attribute].self) { pivots in
             let ids = pivots.map({ $0.attributeID })
-            return try Attribute.query(on: request).filter(\.id ~~ ids).all()
+            return Attribute.query(on: request).filter(\.id ~~ ids).all()
         }
         
         return Async.map(to: [AttributeContent].self, pivots, attributes) { (pivots, attributes) in

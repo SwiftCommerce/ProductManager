@@ -1,5 +1,5 @@
 import FluentSQL
-
+/*
 final class QueryDataDecoder<Database> where Database: QuerySupporting {
     var entity: String?
     init(_ database: Database.Type, entity: String? = nil) {
@@ -10,9 +10,9 @@ final class QueryDataDecoder<Database> where Database: QuerySupporting {
         return try D.init(from: decoder)
     }
 }
-
+*/
 /// MARK: Private
-
+/*
 fileprivate final class _QueryDataDecoder<Database>: Decoder where Database: QuerySupporting {
     var codingPath: [CodingKey] { return [] }
     var userInfo: [CodingUserInfoKey: Any] { return [:] }
@@ -30,19 +30,18 @@ fileprivate final class _QueryDataDecoder<Database>: Decoder where Database: Que
     func unkeyedContainer() throws -> UnkeyedDecodingContainer { throw unsupported() }
     func singleValueContainer() throws -> SingleValueDecodingContainer { throw unsupported() }
 }
-
+*/
 private func unsupported() -> FluentError {
     return FluentError(
         identifier: "rowDecode",
         reason: "PostgreSQL rows only support a flat, keyed structure `[String: T]`",
         suggestedFixes: [
             "You can conform nested types to `PostgreSQLJSONType` or `PostgreSQLArrayType`. (Nested types must be `PostgreSQLDataCustomConvertible`.)"
-        ],
-        source: .capture()
+        ]
     )
 }
 
-
+/*
 fileprivate struct _QueryDataKeyedDecoder<K, Database>: KeyedDecodingContainerProtocol
     where K: CodingKey, Database: QuerySupporting
 {
@@ -91,7 +90,7 @@ fileprivate struct _QueryDataKeyedDecoder<K, Database>: KeyedDecodingContainerPr
     func decodeIfPresent<T>(_ type: T.Type, forKey key: K) throws -> T? where T: Decodable { return try _parse(T.self, forKey: key) }
     func decode<T>(_ type: T.Type, forKey key: K) throws -> T where T: Decodable {
         guard let t = try _parse(T.self, forKey: key) else {
-            throw FluentError(identifier: "missingValue", reason: "No value found for key: \(key)", source: .capture())
+            throw FluentError(identifier: "missingValue", reason: "No value found for key: \(key)", suggestedFixes: .capture())
         }
         return t
     }
@@ -102,7 +101,7 @@ fileprivate struct _QueryDataKeyedDecoder<K, Database>: KeyedDecodingContainerPr
     func superDecoder() throws -> Decoder { return decoder }
     func superDecoder(forKey key: K) throws -> Decoder { return decoder }
 }
-
+*/
 extension QueryBuilder {
     
     /// Gets all models from a table that have any one of a list of values in a specefied column.
@@ -112,7 +111,7 @@ extension QueryBuilder {
     ///   - values: The values to check for in the columns.
     /// - Returns: All the models that match the given query, wrapped in a future.
     @discardableResult
-    public func models<Value>(where field: KeyPath<Model, Value>, in values: [Value]?) -> Future<[Result]> where Value: ReflectionDecodable {
+    public func models<Model, Value>(where field: KeyPath<Model, Value>, in values: [Value]?) -> Future<[Result]> where Value: Encodable {
         
         // This method is different because we allow `nil` to be passed in instead of an array.
         // If we get `nil` instead of an array, return an empty array immediately, it saves time.
@@ -122,10 +121,10 @@ extension QueryBuilder {
         
         // Wrap filter in `flatMap` so the method doesn't have to throw.
         // Since `value` is not `nil`, run the filter and get all the resulting models.
-        return Future.flatMap(on: self.connection.eventLoop) { return try self.filter(field ~~ values).all() }
+        return Future.flatMap(on: self.connection.eventLoop) { return self.filter(field ~~ values).all() }
     }
 }
-
+/*
 extension Model {
 
     /// Allows you to run raw queries in a model type.
@@ -153,34 +152,4 @@ extension Model {
     }
 }
 
-extension MySQLConnection {
-    
-    /// A generic logging method for outputting raw queries and
-    /// its parameters to the console if the connection has logging enabled.
-    ///
-    /// - Parameters:
-    ///   - query: The database query that is run on the connection.
-    ///   - parameters: The paramaters that are passed into the query
-    ///     for replacement values.
-    func log(query: String, with parameters: [MySQLDataConvertible]) {
-        do {
-            
-            // If database logging is enabled, the connection will have a logger.
-            if let logger = self.logger {
-                
-                // Create a formatted message with the query, parameters, and timestamp.
-                let log = DatabaseLog(
-                    dbuid: "mysql",
-                    query: query,
-                    values: try parameters.map { try $0.convertToMySQLData().description }
-                )
-                
-                // Log the message.
-                logger.record(query: log.description)
-            }
-        } catch {
-            // Converting the paramaters passed in to `MySQLData` failed. Signify the failure to log.
-            print(DatabaseLog(dbuid: "mysql", query: "Logging failed. Unable to get parameter descriptions."))
-        }
-    }
-}
+*/

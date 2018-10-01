@@ -5,6 +5,7 @@
 /// A product is connected to 0 or more `Translation` models, whicg are each connected to a price for the product
 /// in the currency of the location for the given translation.
 final class Product: ProductModel {
+    static let entity: String = "products"
     
     /// The database ID of the model.
     var id: Int?
@@ -70,7 +71,7 @@ final class Product: ProductModel {
             // Delete all connections to related models (categories, attributes, translations).
             return try Async.flatMap(
                 to: Void.self,
-                self.categories.deleteConnections(on: request),
+                self.categories.pivots(on: request).delete(),
                 self.attributes.query(on: request).delete(),
                 self.translations(on: request).delete()
             ) { _, _, _ in

@@ -5,12 +5,16 @@ import Vapor
 /// A `Price` connects to a `Product` model through the
 /// `ProductPrice` pivot model.
 final class Price: Content, MySQLModel, Migration, Parameter {
+    static let entity: String = "prices"
     
     /// The database ID of the model.
     var id: Int?
     
-    /// The amount of the translation's currency required for the product's purchase.
-    var price: Float
+    /// The amount the model's currency in cents
+    /// required to purchase the connected product.
+    /// - Note: We store cents because we avoid decimal
+    ///   inaccuracies by not using `Float` or `Double`.
+    var cents: Int
     
     /// The date the price became valid on.
     var activeFrom: Date
@@ -33,21 +37,28 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     ///   - activeFrom: The date the price starts being valid. If you pass in `nil`, it defaults to the time the price is created (`Date()`).
     ///   - activeTo: The date the price becomes invalid. If you pass in `nil`, it defaults to some time in the distant future (`Date.distantFuture`).
     ///   - active: Wheather or not the price is valid. If you pass in `nil`, the value is calculated of the `activeFrom` and `activeTo` dates.
-    init(price: Float, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
+    init(cents: Int, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
+        
+        // Use some odd verification fot the 'currency' value.
+        // It should be a three lettter character string.
+        
+        // We check for 0 and 1 so `RefletionDecodable` works.
         guard
-            (currency.count == 3 && currency.replacingOccurrences(of: "\\d", with: "$1", options: .regularExpression) == currency) ||
+            (currency.count == 3 && currency.replacingOccurrences(of: "[^a-zA-Z]", with: "", options: .regularExpression) == currency) ||
             (currency == "1" || currency == "0")
         else {
-            throw Abort(.badRequest, reason: "'currency' field must contain 3 characters. Found \(currency.count)")
+            let count = currency.replacingOccurrences(of: "[^a-zA-Z]", with: "", options: .regularExpression).count
+            throw Abort(.badRequest, reason: "'currency' field must contain 3 letter characters. Found \(count)")
         }
         
-        let af = activeFrom ?? Date()
+        let af = activeFrom ?? Date.distantPast
         let at: Date = activeTo ?? Date.distantFuture
+        let currentDate = Date()
         
-        self.price = price
+        self.cents = cents
         self.activeFrom = af
         self.activeTo = at
-        self.active = active ?? (Date() > af && Date() < at)
+        self.active = active ?? (currentDate > af && currentDate < at)
         self.currency = currency.uppercased()
     }
     
@@ -55,7 +66,7 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     convenience init(from decoder: Decoder)throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(
-            price: container.decode(Float.self, forKey: .price),
+            cents: container.decode(Int.self, forKey: .cents),
             activeFrom: container.decodeIfPresent(Date.self, forKey: .activeFrom),
             activeTo: container.decodeIfPresent(Date.self, forKey: .activeTo),
             active: container.decodeIfPresent(Bool.self, forKey: .active),
@@ -77,7 +88,7 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     /// - Returns: A void future, which will signal once the update is complete.
     func update(with body: PriceUpdateBody) -> Price {
         // Update all the properties if a value for it is found in the body, else use the old value.
-        self.price = body.price ?? self.price
+        self.cents = body.cents ?? self.cents
         self.activeFrom = body.activeFrom ?? self.activeFrom
         self.activeTo = body.activeTo ?? self.activeTo
         self.active = body.active ?? self.active
@@ -90,7 +101,7 @@ final class Price: Content, MySQLModel, Migration, Parameter {
 struct PriceUpdateBody: Content {
     
     ///
-    let price: Float?
+    let cents: Int?
     
     ///
     let activeFrom: Date?

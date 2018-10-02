@@ -5,11 +5,11 @@
 Config/secrets
 setup
 ### Vapor Patch ###
-Packages
 .build
 xcuserdata
 *.xcodeproj
 DerivedData/
 .DS_Store
-
+/Packages
+Package.resolved
 # End of https://www.gitignore.io/api/vapor

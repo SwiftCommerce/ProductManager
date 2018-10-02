@@ -1,5 +1,6 @@
 @_exported import FluentMySQL
 @_exported import Vapor
+import JWTMiddleware
 
 /// Called before your application initializes.
 ///
@@ -12,6 +13,16 @@ public func configure(
     // Register the `FluentMySQLProvider`.
     // This creates the connection to the database and runs the model migrations.
     try services.register(FluentMySQLProvider())
+    
+    // Registers a `JWTService` for verifying
+    // incoming access tokens.
+    let jwtProvider = JWTProvider { n, d in
+        guard let d = d else { throw Abort(.internalServerError, reason: "Could not find environment variable 'JWT_SECRET'", identifier: "missingEnvVar") }
+        
+        let headers = JWTHeader(alg: "RS256", crit: ["exp", "aud"], kid: "")
+        return try RSAService(n: n, e: "AQAB", d: d, header: headers)
+    }
+    try services.register(jwtProvider)
 
     // Create a router,
     // register all the app's routes to it,
@@ -19,7 +30,7 @@ public func configure(
     let router = EngineRouter.default()
     try routes(router)
     services.register(router, as: Router.self)
-
+    
     // Register middleware with the app's services.
     // These middleware will automaticly be added to all routes.
     var middlewares = MiddlewareConfig() // Create _empty_ middleware config
@@ -29,7 +40,7 @@ public func configure(
     services.register(middlewares)
 
     // Configure a MySQL database.
-    var databases = DatabaseConfig()
+    var databases = DatabasesConfig()
     
     if !env.isRelease {
         databases.enableLogging(on: .mysql)

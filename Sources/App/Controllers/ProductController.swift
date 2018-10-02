@@ -79,7 +79,7 @@ final class ProductController: RouteCollection {
     
     /// Get all the prodcuts from the database.
     func index(_ request: Request)throws -> Future<[ProductResponseBody]> {
-        return try Product.filter(on: request).flatMap(to: [ProductResponseBody].self, { products in
+        return Product.query(on: request).all().flatMap(to: [ProductResponseBody].self, { products in
             return products.map { Promise(product: $0, on: request).futureResult }.flatten(on: request)
         })
     }
@@ -97,7 +97,7 @@ final class ProductController: RouteCollection {
         
         // Get the category IDs from the request query and get all the `Category` models with the IDs.
         let categoryIDs = try request.query.get([Category.ID].self, at: "category_ids")
-        let futureCategories = try Category.query(on: request).filter(\.id ~~ categoryIDs).sort(\.sort, .ascending).all()
+        let futureCategories = Category.query(on: request).filter(\.id ~~ categoryIDs).sort(\.sort, .ascending).all()
         
         return futureCategories.each(to: [Product].self) { (category) in
             
@@ -121,11 +121,15 @@ final class ProductController: RouteCollection {
         let product = try request.parameters.next(Product.self)
         
         // Get all models that have an ID in any if the request bodies' arrays.
-        let detachCategories = Category.query(on: request).models(where: \Category.id, in: body.categories?.detach)
-        let attachCategories = Category.query(on: request).models(where: \Category.id, in: body.categories?.attach)
+        let categoryIds = body.categories?.detach ?? []
+        let categoryIds2 = body.categories?.attach ?? []
+        let pricesIds = body.prices?.detach ?? []
+        let pricesIds2 = body.prices?.attach ?? []
+        let detachCategories = Category.query(on: request).filter(\Category.id ~~ categoryIds).all()
+        let attachCategories = Category.query(on: request).filter(\Category.id ~~ categoryIds2).all()
         
-        let detachPrices = Price.query(on: request).models(where: \Price.id, in: body.prices?.detach)
-        let attachPrices = Price.query(on: request).models(where: \Price.id, in: body.prices?.attach)
+        let detachPrices = Price.query(on: request).filter(\Price.id ~~ pricesIds).all()
+        let attachPrices = Price.query(on: request).filter(\Price.id ~~ pricesIds2).all()
         
         // Attach and detach the models fetched with the ID arrays.
         // This means we either create or delete a row in a pivot table.

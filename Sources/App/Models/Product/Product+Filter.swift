@@ -1,10 +1,9 @@
-import Vapor
-import Fluent
-import FluentSQL
-
+import FluentMySQL
 import Foundation
-
-extension Product {
+import FluentSQL
+import Vapor
+/*
+extension QueryBuilder where Model == Product, Result == Product {
     
     /// Gets all `Product` models from the database,
     /// filtering them based on the query-strings from a request.
@@ -27,7 +26,7 @@ extension Product {
     ///
     /// - Throws: Errors that occur when creating database queries.
     /// - Returns: All the `Product` model that match the query-strings from the request.
-    static func filter(on request: Request)throws -> Future<[Product]> {
+    func filter(on request: Request)throws -> Future<QueryBuilder<Product, Product>> {
         
         // Get valid IDs for the `Product` models we fetch.
         let productIDs = try [
@@ -63,35 +62,29 @@ extension Product {
         }
         
         // Construct base query for getting `Product` models.
-        let query = cleanedIDs.map(to: QueryBuilder<Product, Product>.self) { validIDs in
-            let query = Product.query(on: request)
+        return cleanedIDs.map(to: QueryBuilder<Product, Product>.self) { validIDs in
             
             if let ids = validIDs {
-                try query.filter(\.id ~~ ids)
+                try self.filter(\.id ~~ ids)
             }
             if let status = try request.query.get(ProductStatus?.self, at: "status") {
-                try query.filter(\.status == status)
+                try self.filter(\.status == status)
             }
-            
-            return query
-        }
-        
-        return query.flatMap(to: [Product].self) { query in
             
             // If query parameters where passed in for pagination, limit the amount of models we fetch.
             if let page = try request.query.get(Int?.self, at: "page"), let results = try request.query.get(Int?.self, at: "results_per_page") {
-    
+                
                 // Get all the models in the range specified by the query parameters passed in.
-                return query.range(lower: (results * page) - results, upper: (results * page)).all()
+                return self.range(lower: (results * page) - results, upper: (results * page))
             } else {
-    
+                
                 // Run the query to fetch all the rows from the `products` database table.
-                return query.all()
+                return self
             }
         }
     }
     
-    private static func idsConstrainedWithPrice(with request: Request)throws -> Future<[Product.ID]?> {
+    private func idsConstrainedWithPrice(with request: Request)throws -> Future<[Product.ID]?> {
         
         // Setup base query, along with logical constrainst and paramaters storage.
         let priceQuery = "SELECT * FROM `\(Price.entity)` INNER JOIN `\(ProductPrice.entity)` ON `\(ProductPrice.entity)`.`priceID` = `\(Price.entity)`.`id`"
@@ -101,14 +94,14 @@ extension Product {
         
         // See if a `minPrice` query was passed in. If so,
         // update the query data stores and logival checks.
-        if let min = try request.query.get(Float?.self, at: "minPrice") {
-            constraints.append("`\(Price.entity)`.`price` >= ?")
+        if let min = try request.query.get(Int?.self, at: "minPrice") {
+            constraints.append("`\(Price.entity)`.`cents` >= ?")
             paramaters.append(min)
             priceConstraints += 1
         }
         
-        if let max = try request.query.get(Float?.self, at: "maxPrice") {
-            constraints.append("`\(Price.entity)`.`price` <= ?")
+        if let max = try request.query.get(Int?.self, at: "maxPrice") {
+            constraints.append("`\(Price.entity)`.`cents` <= ?")
             paramaters.append(max)
             priceConstraints += 1
         }
@@ -123,7 +116,7 @@ extension Product {
         }
     }
     
-    private static func idsConstrainedWithAttributes(with request: Request)throws -> Future<[Product.ID]?> {
+    private func idsConstrainedWithAttributes(with request: Request)throws -> Future<[Product.ID]?> {
         let futureAttributes: Future<[ProductID]>
         let filterCount: Int
         
@@ -140,7 +133,7 @@ extension Product {
                 // The querstion-marks are placeholders in the query.
                 // They are replaced with the `parameters` values passed into the `.raw` method.
                 return "(`\(Attribute.entity)`.`name` = ? AND `\(ProductAttribute.entity)`.`value` = ?)"
-            }.joined(separator: " OR ")
+                }.joined(separator: " OR ")
             attributeQuery += " WHERE \(whereClause)"
             
             futureAttributes = ProductID.raw(attributeQuery, with: paraneters, on: request)
@@ -165,7 +158,7 @@ extension Product {
         }
     }
     
-    private static func idsConstrainedWithCategories(with request: Request)throws -> Future<[Product.ID]?> {
+    private func idsConstrainedWithCategories(with request: Request)throws -> Future<[Product.ID]?> {
         let futureCategories: Future<[ProductID]>
         let categoryCount: Int
         
@@ -194,3 +187,4 @@ struct ProductID: MySQLModel {
     var id: Int?
     let productID: Product.ID
 }
+*/

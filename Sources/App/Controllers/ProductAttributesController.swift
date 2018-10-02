@@ -1,8 +1,9 @@
-import Fluent
+
 import Vapor
+import Fluent
 
 /// A controller for all API endpoints that make operations on a product's attributes.
-final class AttributesController: RouteCollection {
+final class ProductAttributesController: RouteCollection {
     
     /// Required by the `RouteCollection` protocol.
     /// Allows you to run this to add your routes to a router:
@@ -27,6 +28,9 @@ final class AttributesController: RouteCollection {
         
         // Register a PATCH endpoint at `/products/:product/attributes/:int`.
         attributes.patch(Int.parameter, use: update)
+        
+        // Register a PATCH endpoint at `/products/:product/attributes/attach/:attribute`.
+        attributes.patch("attach", Attribute.parameter, use: attach)
         
         // Register a DELETE endpoint at `/prodcuts/:prodcut/attributes/:attributes`.
         attributes.delete(Attribute.parameter, use: delete)
@@ -93,7 +97,7 @@ final class AttributesController: RouteCollection {
         let product = try request.parameters.next(Product.self)
         
         // Get the ID of the attribute to update.
-        let id = try request.parameters.next(Int.self)
+        let id:Int = try request.parameters.next(Int.self)
         
         // Get the new value fore the for the `Attribute` model.
         let newValue = request.content.get(String.self, at: "value")
@@ -102,7 +106,8 @@ final class AttributesController: RouteCollection {
         return flatMap(to: Product.self, product, newValue, { (product, newValue) in
             
             // Find the attribute connected to the product with the ID passed in, update its `value` property, and return the product.
-            return try product.attributes.query(on: request).filter(\Attribute.id == id).update(\Attribute.type, to: newValue).transform(to: product)
+            let idKeyPath:KeyPath = \Attribute.id // the compiler is stupid and doesn't automatically recognize it as a key path
+            return try product.attributes.query(on: request).filter(idKeyPath == id).update(\Attribute.type, to: newValue).all().transform(to: product)
         }).flatMap(to: [AttributeContent].self, { product in
             
             // `QueryBuilder.update` returns `Future<Void>`, so to get the updated attribute, we need to run another query.
@@ -110,6 +115,29 @@ final class AttributesController: RouteCollection {
             
             // Gets the first element of the array (there should only be one or zero elements) and unwrap it.
         }).map(to: AttributeContent?.self, { $0.first }).unwrap(or: Abort(.notFound, reason: "No attribute connected to product with ID '\(id)'"))
+    }
+    
+    /// Attaches an `Attribute` model to a `Product` model
+    /// through a `ProductAttribute` pivot.
+    func attach(_ request: Request)throws -> Future<AttributeContent> {
+        
+        // Get the models to attach from the request paramaters/
+        let product = try request.parameters.next(Product.self)
+        let attribute = try request.parameters.next(Attribute.self)
+        
+        // Get the pivot metadata from the request body.
+        let value = try request.content.syncGet(String.self, at: "value")
+        let language = try request.content.syncGet(String.self, at: "language")
+        
+        return Async.flatMap(to: (ProductAttribute, Attribute).self, product, attribute) { product, attribute -> Future<(ProductAttribute, Attribute)> in
+            
+            // Connect the two models through a `ProductAttribute` pivot.
+            return try ProductAttribute(value: value, language: language, product: product, attribute: attribute).save(on: request).and(result: attribute)
+        }.map(to: AttributeContent.self) { contentData in
+            
+            // Convert the `Attribute` model and pivot to an `AttributeContent` instance.
+            return AttributeContent(attribute: contentData.1, pivot: contentData.0)
+        }
     }
     
     /// Detaches a given `Attribute` from its parent `Prodcut` model.

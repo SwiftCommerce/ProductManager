@@ -1,15 +1,5 @@
 import FluentSQL
 
-private func unsupported() -> FluentError {
-    return FluentError(
-        identifier: "rowDecode",
-        reason: "PostgreSQL rows only support a flat, keyed structure `[String: T]`",
-        suggestedFixes: [
-            "You can conform nested types to `PostgreSQLJSONType` or `PostgreSQLArrayType`. (Nested types must be `PostgreSQLDataCustomConvertible`.)"
-        ]
-    )
-}
-
 extension QueryBuilder {
     
     /// Gets all models from a table that have any one of a list of values in a specefied column.

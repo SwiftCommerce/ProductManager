@@ -95,21 +95,19 @@ final class ProductController: RouteCollection {
     /// Get all the `Product` models connected to specified categories.
     func categorized(_ request: Request)throws -> Future<[ProductResponseBody]> {
         
-        // Get the category IDs from the request query and get all the `Category` models with the IDs.
+        // Get the IDs of the categories to get the products for.
         let categoryIDs = try request.query.get([Category.ID].self, at: "category_ids")
-        let futureCategories = Category.query(on: request).filter(\.id ~~ categoryIDs).sort(\.sort, .ascending).all()
         
-        return futureCategories.each(to: [Product].self) { (category) in
-            
-            // Get all the `Product` models that are connected to the categories.
-            return try category.products.query(on: request).all()
-        }
-            
-        // Flatten the 2D array to products to a 1D array.
-        .map(to: [Product].self) { $0.flatMap({ $0 }) }
-            
-        // Convert each prodcut to a `ProductResponseBody` object.
-        .each(to: ProductResponseBody.self) { (product) in
+        // Get the products that are joined to the categories, and sort them by category precedence.
+        let products = Product.query(on: request)
+               .join(\Product.id, to: \ProductCategory.productID)
+               .join(\ProductCategory.categoryID, to: \Category.id)
+               .filter(\ProductCategory.categoryID ~~ categoryIDs)
+               .sort(\Category.sort)
+               .all()
+        
+        // Convert each `Prooduct` model to a `ProductResponseBody` instance.
+        return products.each(to: ProductResponseBody.self) { product in
             return Promise(product: product, on: request).futureResult
         }
     }

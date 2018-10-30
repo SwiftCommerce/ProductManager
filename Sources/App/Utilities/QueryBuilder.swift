@@ -21,4 +21,11 @@ extension QueryBuilder {
         // Since `value` is not `nil`, run the filter and get all the resulting models.
         return Future.flatMap(on: self.connection.eventLoop) { return self.filter(field ~~ values).all() }
     }
+    
+    public func sort<M, T>(
+        _ key: KeyPath<M, T>,
+        _ direction: Database.QuerySortDirection = Database.querySortDirectionAscending
+    ) -> QueryBuilder<Database, Result> where M: Model, M.Database == Database {
+        return sort(Database.querySort(Database.queryField(.keyPath(key)), direction))
+    }
 }

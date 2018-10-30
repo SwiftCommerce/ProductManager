@@ -59,21 +59,12 @@ public func configure(
 
     // Configure migrations.
     // Add all models to the migration config so the `FluentProvider` will create tables for them in the database.
-    var migrations = MigrationConfig()
-    migrations.add(model: Category.self, database: .mysql)
-    migrations.add(model: Product.self, database: .mysql)
-    migrations.add(model: Price.self, database: .mysql)
-    migrations.add(model: Attribute.self, database: .mysql)
-    migrations.add(model: ProductPrice.self, database: .mysql)
-    migrations.add(model: CategoryPivot.self, database: .mysql)
-    migrations.add(model: ProductCategory.self, database: .mysql)
-    migrations.add(model: ProductAttribute.self, database: .mysql)
-    migrations.add(model: ProductTranslation.self, database: .mysql)
-    migrations.add(model: CategoryTranslation.self, database: .mysql)
+    var migrationConfig = MigrationConfig()
+    try migrations(config: &migrationConfig)
     
     // Register Database and Migration configurations with the application services.
     services.register(databases)
-    services.register(migrations)
+    services.register(migrationConfig)
     
     // Register the `revert` command with service,
     // used to drop the database.

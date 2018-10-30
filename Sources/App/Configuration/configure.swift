@@ -39,31 +39,14 @@ public func configure(
     services.register(middlewares)
 
     // Configure a MySQL database.
-    var databases = DatabasesConfig()
-    
-    if !env.isRelease {
-        databases.enableLogging(on: .mysql)
-    }
-    
-    // Configure the MySQL Database.
-    // If we are in Vapor Cloud, we use the available env vars,
-    // otherwise we use the values for local development
-    let config = MySQLDatabaseConfig.init(
-        hostname: Environment.get("DATABASE_HOSTNAME") ?? "localhost",
-        port: 3306,
-        username: Environment.get("DATABASE_USER") ?? "root",
-        password: Environment.get("DATABASE_PASSWORD") ?? "password",
-        database:  Environment.get("DATABASE_DB") ?? "product_manager"
-    )
-    databases.add(database: MySQLDatabase(config: config), as: .mysql)
+    var dbConfig = DatabasesConfig()
+    try databases(config: &dbConfig, for: env)
+    services.register(dbConfig)
 
     // Configure migrations.
     // Add all models to the migration config so the `FluentProvider` will create tables for them in the database.
     var migrationConfig = MigrationConfig()
     try migrations(config: &migrationConfig)
-    
-    // Register Database and Migration configurations with the application services.
-    services.register(databases)
     services.register(migrationConfig)
     
     // Register the `revert` command with service,

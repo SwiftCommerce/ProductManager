@@ -13,6 +13,12 @@ final class Product: ProductModel {
     /// The SKU (stock-keeping unit) of the tangible product this model represents.
     let sku: String
     
+    /// The name of the product.
+    var name: String
+    
+    /// A description of the product.
+    var description: String?
+    
     /// That current state of the product.
     /// This could be `draft`, `published`, or one of other cases.
     var status: ProductStatus
@@ -21,8 +27,10 @@ final class Product: ProductModel {
     var updatedAt: Date?
     var deletedAt: Date?
     
-    init(sku: String, status: ProductStatus) {
+    init(sku: String, name: String, description: String?, status: ProductStatus) {
         self.sku = sku
+        self.name = name
+        self.description = description
         self.status = status
     }
     
@@ -91,7 +99,8 @@ final class Product: ProductModel {
 /// Giving the client more information then just the `sku`.
 struct ProductResponseBody: Content {
     let id: Int?
-    let sku: String
+    let sku, name: String
+    let description: String?
     let status: ProductStatus
     let createdAt, updatedAt, deletedAt: Date?
     let attributes: [AttributeContent]
@@ -102,6 +111,8 @@ struct ProductResponseBody: Content {
     init(product: Product, attributes: [AttributeContent], translations: [TranslationResponseBody], categories: [CategoryResponseBody], prices: [Price]) {
         self.id = product.id
         self.sku = product.sku
+        self.name = product.name
+        self.description = product.description
         self.status = product.status
         self.createdAt = product.createdAt
         self.updatedAt = product.updatedAt

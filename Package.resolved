@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/vapor/console.git",
         "state": {
           "branch": null,
-          "revision": "5b9796d39f201b3dd06800437abd9d774a455e57",
-          "version": "3.0.2"
+          "revision": "96617dcdcbb7572cbff0645a2e3362c042bfffad",
+          "version": "3.0.3"
         }
       },
       {
@@ -96,8 +96,8 @@
         "repositoryURL": "https://github.com/skelpo/JWTVapor.git",
         "state": {
           "branch": null,
-          "revision": "41c81ce5934e50ffaebaa6750d27c900659d3f22",
-          "version": "0.11.2"
+          "revision": "0c4097615712947e7717d077b75f25cc79c0dd97",
+          "version": "0.12.0"
         }
       },
       {
@@ -204,8 +204,8 @@
         "repositoryURL": "https://github.com/vapor/validation.git",
         "state": {
           "branch": null,
-          "revision": "156f8adeac3440e868da3757777884efbc6ec0cc",
-          "version": "2.1.0"
+          "revision": "4de213cf319b694e4ce19e5339592601d4dd3ff6",
+          "version": "2.1.1"
         }
       },
       {

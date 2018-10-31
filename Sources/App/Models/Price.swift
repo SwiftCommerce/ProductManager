@@ -28,6 +28,8 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     /// The currency used for the price, i.e. EUR, USD, GBR.
     var currency: String
     
+    /// The parent product model that owns the price model.
+    let productID: Product.ID
     
     /// Creates a new `Price` model from given data.
     /// Make sure you call `.save` on it to store it in the database.
@@ -37,7 +39,7 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     ///   - activeFrom: The date the price starts being valid. If you pass in `nil`, it defaults to the time the price is created (`Date()`).
     ///   - activeTo: The date the price becomes invalid. If you pass in `nil`, it defaults to some time in the distant future (`Date.distantFuture`).
     ///   - active: Wheather or not the price is valid. If you pass in `nil`, the value is calculated of the `activeFrom` and `activeTo` dates.
-    init(cents: Int, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
+    init(productID: Product.ID, cents: Int, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
         
         // Use some odd verification fot the 'currency' value.
         // It should be a three lettter character string.
@@ -60,12 +62,14 @@ final class Price: Content, MySQLModel, Migration, Parameter {
         self.activeTo = at
         self.active = active ?? (currentDate > af && currentDate < at)
         self.currency = currency.uppercased()
+        self.productID = productID
     }
     
     // We have a custom decoding init so we can have the same default values as the ones in the main init.
     convenience init(from decoder: Decoder)throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(
+            productID: container.decode(Product.ID.self, forKey: .productID),
             cents: container.decode(Int.self, forKey: .cents),
             activeFrom: container.decodeIfPresent(Date.self, forKey: .activeFrom),
             activeTo: container.decodeIfPresent(Date.self, forKey: .activeTo),

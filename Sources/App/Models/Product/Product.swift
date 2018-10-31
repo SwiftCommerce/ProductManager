@@ -34,6 +34,11 @@ final class Product: ProductModel {
         self.status = status
     }
     
+    /// Creats a query that gets the `Price` models connected to the current `Product` model.
+    var prices: Children<Product, Price> {
+        return children(\.productID)
+    }
+    
     /// Gets all the `ProductTranslation` models connected to the current `Product` model through `ProductTranslationPivot`s.
     ///
     /// - Parameter executor: The object used to run the query to fetch the trsnlations from the database.

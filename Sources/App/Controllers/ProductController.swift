@@ -15,11 +15,11 @@ struct ProductUpdateBody: Content {
     ///     }
     struct PricesUpdate: Content {
         
-        /// The IDs of the `Price` model to attach to the `Product` model.
-        let attach: [Price.ID]?
+        /// The stricttre of the new `Price` child models for the `Product` model.
+        let create: [PriceContent]?
         
         /// The IDs of the `Price` model to dettach from the `Product` model.
-        let detach: [Price.ID]?
+        let delete: [Price.ID]?
     }
     
     /// A decoded JSON object to get the IDs of `Category` models
@@ -50,7 +50,7 @@ final class ProductController: RouteCollection {
         
         // Registers a POST route at `/prodcuts` with the router.
         // This route automatically decodes the request's body to a `Prodcut` object.
-        products.post(Product.self, use: create)
+        products.post(ProductContent.self, use: create)
         
         // Registers a GET route at `/prodcuts` with the router.
         products.get(use: index)
@@ -71,10 +71,26 @@ final class ProductController: RouteCollection {
     
     /// Creates a new `Prodcut` model from the request's body
     /// and saves it to the database.
-    func create(_ request: Request, _ product: Product)throws -> Future<ProductResponseBody> {
+    func create(_ request: Request, _ contents: ProductContent)throws -> Future<ProductResponseBody> {
         
-        // Save the `Product` model to the database and convert it to a `ProductResponseBody`.
-        return product.save(on: request).response(on: request)
+        // Save the `Product` model to the database.
+        return Product(content: contents).save(on: request).flatMap { product in
+            
+            // Save the `Price` child models to the database, conenected to the newly saved `Product`.
+            let prices = try contents.prices?.map { price in
+                return try Price(
+                    productID: product.requireID(),
+                    cents: price.cents,
+                    activeFrom: price.activeFrom,
+                    activeTo: price.activeTo,
+                    active: price.active,
+                    currency: price.currency
+                )
+            } ?? []
+            
+            // Convert the newly saved `Product` model to a `ProductResponseBody`.
+            return prices.map { $0.save(on: request) }.flatten(on: request).transform(to: product).response(on: request)
+        }
     }
     
     /// Get all the prodcuts from the database.
@@ -121,13 +137,10 @@ final class ProductController: RouteCollection {
         // Get all models that have an ID in any if the request bodies' arrays.
         let categoryIds = body.categories?.detach ?? []
         let categoryIds2 = body.categories?.attach ?? []
-        let pricesIds = body.prices?.detach ?? []
-        let pricesIds2 = body.prices?.attach ?? []
+        let pricesDelete = body.prices?.delete ?? []
+        let pricesCreate = body.prices?.create ?? []
         let detachCategories = Category.query(on: request).filter(\Category.id ~~ categoryIds).all()
         let attachCategories = Category.query(on: request).filter(\Category.id ~~ categoryIds2).all()
-        
-        let detachPrices = Price.query(on: request).filter(\Price.id ~~ pricesIds).all()
-        let attachPrices = Price.query(on: request).filter(\Price.id ~~ pricesIds2).all()
         
         // Attach and detach the models fetched with the ID arrays.
         // This means we either create or delete a row in a pivot table.
@@ -137,10 +150,21 @@ final class ProductController: RouteCollection {
             return [detached, attached].flatten(on: request)
         }.transform(to: ())
         
-        let prices = Async.flatMap(to: Void.self, product, detachPrices, attachPrices) { (product, detach, attach) in
-            let detached = detach.map({ product.prices.detach($0, on: request) }).flatten(on: request)
-            let attached = try attach.map({ try ProductPrice(product: product, price: $0).save(on: request) }).flatten(on: request).transform(to: ())
-            return [detached, attached].flatten(on: request)
+        let prices = product.flatMap { product -> Future<Void> in
+            let id = try product.requireID()
+            let deleted = Price.query(on: request).filter(\.id ~~ pricesDelete).delete()
+            let created = try pricesCreate.map { price in
+                return try Price(
+                    productID: id,
+                    cents: price.cents,
+                    activeFrom: price.activeFrom,
+                    activeTo: price.activeTo,
+                    active: price.active,
+                    currency: price.currency
+                )
+            }.map { $0.save(on: request) }.flatten(on: request)
+            
+            return [deleted, created.transform(to: ())].flatten(on: request)
         }.transform(to: ())
         
         // Once all the attaching/detaching is complete, convert the updated model to a `ProductResponseBody` and return it.

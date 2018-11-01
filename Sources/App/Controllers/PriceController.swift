@@ -14,7 +14,7 @@ final class PriceController: RouteCollection {
         
         // We create a router group with a root path of `/prices`
         // because all routes will start with the same path.
-        let prices = router.grouped(Product.ID.parameter, "prices")
+        let prices = router.grouped(Product.parameter, "prices")
         
         // Create a POST route at `/prices`
         prices.post(PriceContent.self, use: create)
@@ -37,14 +37,14 @@ final class PriceController: RouteCollection {
     /// Takes a `Price` model decoded from a request
     /// and saves it to the database
     func create(_ request: Request, _ contents: PriceContent)throws -> Future<Price> {
-        let product = try request.parameters.next(Product.ID.self)
+        let product = try request.parameters.id(for: Product.self)
         let price = try Price(content: contents, product: product)
         return price.save(on: request)
     }
     
     /// Gets all the `Price` models from the database
     func index(_ request: Request)throws -> Future<[Price]> {
-        let product = try request.parameters.next(Product.ID.self)
+        let product = try request.parameters.id(for: Product.self)
         return Price.query(on: request).filter(\.productID == product).all()
     }
     
@@ -52,42 +52,54 @@ final class PriceController: RouteCollection {
     /// based on its ID
     func show(_ request: Request)throws -> Future<Price> {
         
-        // Get the ID and the `Product` parent model ID of the `Price` model to fetch.
-        let product = try request.parameters.next(Product.ID.self)
-        guard let raw = request.parameters.rawValues(for: Price.self).first, let price = Price.ID(raw) else {
-            throw Abort(.badRequest, reason: "Could not get `price` model ID from request parameters")
+        // Get the product the `Price` model is connected to.
+        //
+        // We can't extract the ID because the parameters won't advance and we won't be able to access the `Price` ID.
+        return try request.parameters.next(Product.self).flatMap { product in
+            
+            // Get the ID of the `Price` model to fetch from the request paramaters.
+            let price = try request.parameters.id(for: Price.self)
+            
+            // Get the `Price` model with a matching ID and `Product` ID from the databse and unwrap it. Throw a 404 if we get `nil`.
+            return try Price.query(on: request).filter(\.productID == product.requireID()).filter(\.id == price).first().unwrap(or: Abort(.notFound))
         }
-        
-        // Get the `Price` model with a matching ID and `Product` ID from the databse and unwrap it. Throw a 404 if we get `nil`.
-        return Price.query(on: request).filter(\.productID == product).filter(\.id == price).first().unwrap(or: Abort(.notFound))
     }
     
     /// Updates tha values of a `Price` model that are found in the request body.
     func update(_ request: Request, _ content: PriceUpdateBody)throws -> Future<Price> {
         
-        // Get the ID and the `Product` parent model ID of the `Price` model to update.
-        let product = try request.parameters.next(Product.ID.self)
-        guard let raw = request.parameters.rawValues(for: Price.self).first, let id = Price.ID(raw) else {
-            throw Abort(.badRequest, reason: "Could not get `price` model ID from request parameters")
+        // Get the product the `Price` model is connected to.
+        //
+        // We can't extract the ID because the parameters won't advance and we won't be able to access the `Price` ID.
+        return try request.parameters.next(Product.self).flatMap { product in
+            
+            // Get the ID of the `Price` model to fetch from the request paramaters.
+            let id = try request.parameters.id(for: Price.self)
+            
+            // Get the `Price` model with a matching ID and `Product` ID from the databse and unwrap it. Throw a 404 if we get `nil`.
+            let price = try Price.query(on: request).filter(
+                \.productID == product.requireID()
+            ).filter(
+                \.id == id
+            ).first().unwrap(or: Abort(.notFound))
+            
+            // Update the model's properties that have new values and save it.
+            return price.map { $0.update(with: content) }.update(on: request)
         }
-        
-        // Get the `Price` model with a matching ID and `Product` ID from the databse and unwrap it. Throw a 404 if we get `nil`.
-        let price = Price.query(on: request).filter(\.productID == product).filter(\.id == id).first().unwrap(or: Abort(.notFound))
-        
-        // Update the model's properties that have new values and save it.
-        return price.map { $0.update(with: content) }.update(on: request)
     }
     
     /// Deletes a `Price` model from the database with a given ID.
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         
-        // Get the ID and the `Product` parent model ID of the `Price` model to update.
-        let product = try request.parameters.next(Product.ID.self)
-        guard let raw = request.parameters.rawValues(for: Price.self).first, let id = Price.ID(raw) else {
-            throw Abort(.badRequest, reason: "Could not get `price` model ID from request parameters")
+        // Get the product the `Price` model is connected to.
+        //
+        // We can't extract the ID because the parameters won't advance and we won't be able to access the `Price` ID.
+        return try request.parameters.next(Product.self).flatMap { product in
+            
+            // Get the ID of the `Price` model to fetch from the request paramaters.
+            let price = try request.parameters.id(for: Price.self)
+            
+            return try Price.query(on: request).filter(\.productID == product.requireID()).filter(\.id == price).delete().transform(to: .noContent)
         }
-        
-        // Find the model with the IDs from the route paramaters, delete it, and return a 204 (No Content) status code.
-        return Price.query(on: request).filter(\.productID == product).filter(\.id == id).delete().transform(to: .noContent)
     }
 }

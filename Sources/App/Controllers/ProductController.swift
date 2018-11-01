@@ -11,7 +11,7 @@ struct ProductUpdateBody: Content {
     /// A wrapper type, allowing the request's body to have a nested strcuture:
     ///
     ///     {
-    ///       "prices": {"attach": [], "detach": []}
+    ///       "prices": {"create": [], "delete": []}
     ///     }
     struct PricesUpdate: Content {
         
@@ -77,16 +77,7 @@ final class ProductController: RouteCollection {
         return Product(content: contents).save(on: request).flatMap { product in
             
             // Save the `Price` child models to the database, conenected to the newly saved `Product`.
-            let prices = try contents.prices?.map { price in
-                return try Price(
-                    productID: product.requireID(),
-                    cents: price.cents,
-                    activeFrom: price.activeFrom,
-                    activeTo: price.activeTo,
-                    active: price.active,
-                    currency: price.currency
-                )
-            } ?? []
+            let prices = try contents.prices?.map { try Price(content: $0, product: product.requireID()) } ?? []
             
             // Convert the newly saved `Product` model to a `ProductResponseBody`.
             return prices.map { $0.save(on: request) }.flatten(on: request).transform(to: product).response(on: request)
@@ -145,24 +136,16 @@ final class ProductController: RouteCollection {
         // Attach and detach the models fetched with the ID arrays.
         // This means we either create or delete a row in a pivot table.
         let categories = Async.flatMap(to: Void.self, product, detachCategories, attachCategories) { (product, detach, attach) in
-            let detached = detach.map({ product.categories.detach($0, on: request) }).flatten(on: request)
-            let attached = try attach.map({ try ProductCategory(product: product, category: $0).save(on: request) }).flatten(on: request).transform(to: ())
-            return [detached, attached].flatten(on: request)
+            let detached = detach.map { product.categories.detach($0, on: request) }.flatten(on: request)
+            let attached = try attach.map { try ProductCategory(product: product, category: $0).save(on: request) }.flatten(on: request)
+            
+            return [detached, attached.transform(to: ())].flatten(on: request)
         }.transform(to: ())
         
         let prices = product.flatMap { product -> Future<Void> in
             let id = try product.requireID()
             let deleted = Price.query(on: request).filter(\.id ~~ pricesDelete).delete()
-            let created = try pricesCreate.map { price in
-                return try Price(
-                    productID: id,
-                    cents: price.cents,
-                    activeFrom: price.activeFrom,
-                    activeTo: price.activeTo,
-                    active: price.active,
-                    currency: price.currency
-                )
-            }.map { $0.save(on: request) }.flatten(on: request)
+            let created = try pricesCreate.map { try Price(content: $0, product: id).save(on: request) }.flatten(on: request)
             
             return [deleted, created.transform(to: ())].flatten(on: request)
         }.transform(to: ())

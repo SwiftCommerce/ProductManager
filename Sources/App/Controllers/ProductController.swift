@@ -33,7 +33,7 @@ struct ProductUpdateBody: Content {
 
 // MARK: - Controller
 
-/// A controller for API endpoints that make operations on the `prodcuts` database table.
+/// A controller for API endpoints that make operations on the `products` database table.
 final class ProductController: RouteCollection {
     
     /// Required by the `RouteCollection` protocol.
@@ -44,20 +44,20 @@ final class ProductController: RouteCollection {
     /// - parameter router: The router that the controller's routes will be registered to.
     func boot(router: Router) throws {
         
-        // Registers a POST route at `/prodcuts` with the router.
+        // Registers a POST route at `/products` with the router.
         // This route automatically decodes the request's body to a `Prodcut` object.
         router.post(ProductContent.self, use: create)
         
-        // Registers a GET route at `/prodcuts` with the router.
+        // Registers a GET route at `/products` with the router.
         router.get(use: index)
         
-        // Registers a GET route at `/prodcuts/:product` with the router.
+        // Registers a GET route at `/products/:product` with the router.
         router.get(Product.parameter, use: show)
         
         // Registers a GET route at `/products/categorized` with the router.
         router.get("categorized", use: categorized)
         
-        // Registers a PATCH route at `/prodcuts/:prodcut` with the router.
+        // Registers a PATCH route at `/products/:prodcut` with the router.
         // This route automatically decodes the request's body to a `ProductUpdateBody` object.
         router.patch(ProductUpdateBody.self, at: Product.parameter, use: update)
         
@@ -80,7 +80,7 @@ final class ProductController: RouteCollection {
         }
     }
     
-    /// Get all the prodcuts from the database.
+    /// Get all the products from the database.
     func index(_ request: Request)throws -> Future<[ProductResponseBody]> {
         return Product.query(on: request).all().flatMap(to: [ProductResponseBody].self, { products in
             return products.map { Promise(product: $0, on: request).futureResult }.flatten(on: request)

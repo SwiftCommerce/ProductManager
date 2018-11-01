@@ -4,7 +4,7 @@ import Vapor
 /// The price for a product.
 /// A `Price` connects to a `Product` model through the
 /// `ProductPrice` pivot model.
-final class Price: Content, MySQLModel, Migration, Parameter {
+final class Price: Content, MySQLModel, Parameter {
     static let entity: String = "prices"
     
     /// The database ID of the model.
@@ -98,6 +98,20 @@ final class Price: Content, MySQLModel, Migration, Parameter {
         self.active = body.active ?? self.active
         
         return self
+    }
+}
+
+extension Price: Migration {
+    
+    /// See `Migration.prepare(on:)`.
+    ///
+    /// We create a custom implementation of this method so we can have a foreign-key constraint
+    /// between the `Price.productID` property and the `Product.id` property.
+    static func prepare(on conn: MySQLConnection) -> Future<Void> {
+        return MySQLDatabase.create(self, on: conn) { builder in
+            try addProperties(to: builder)
+            builder.reference(from: \.productID, to: \Product.id)
+        }
     }
 }
 

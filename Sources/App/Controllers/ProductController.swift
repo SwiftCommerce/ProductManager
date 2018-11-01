@@ -44,29 +44,25 @@ final class ProductController: RouteCollection {
     /// - parameter router: The router that the controller's routes will be registered to.
     func boot(router: Router) throws {
         
-        // We create a route group because all the routes for this controller
-        // have the same parent path.
-        let products = router.grouped("products")
-        
         // Registers a POST route at `/prodcuts` with the router.
         // This route automatically decodes the request's body to a `Prodcut` object.
-        products.post(ProductContent.self, use: create)
+        router.post(ProductContent.self, use: create)
         
         // Registers a GET route at `/prodcuts` with the router.
-        products.get(use: index)
+        router.get(use: index)
         
         // Registers a GET route at `/prodcuts/:product` with the router.
-        products.get(Product.parameter, use: show)
+        router.get(Product.parameter, use: show)
         
         // Registers a GET route at `/products/categorized` with the router.
-        products.get("categorized", use: categorized)
+        router.get("categorized", use: categorized)
         
         // Registers a PATCH route at `/prodcuts/:prodcut` with the router.
         // This route automatically decodes the request's body to a `ProductUpdateBody` object.
-        products.patch(ProductUpdateBody.self, at: Product.parameter, use: update)
+        router.patch(ProductUpdateBody.self, at: Product.parameter, use: update)
         
         // Registers a DELETE route at `/products/:product` with the router.
-        products.delete(Product.parameter, use: delete)
+        router.delete(Product.parameter, use: delete)
     }
     
     /// Creates a new `Prodcut` model from the request's body

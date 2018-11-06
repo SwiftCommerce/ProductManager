@@ -29,3 +29,10 @@ extension QueryBuilder {
         return sort(Database.querySort(Database.queryField(.keyPath(key)), direction))
     }
 }
+
+extension QueryBuilder where Database.Query: FluentSQLQuery {
+    func groupBy<M, T>(_ field: KeyPath<M, T>) -> Self where M: SQLTable {
+        self.query.groupBy.append(.groupBy(.column(.keyPath(field))))
+        return self
+    }
+}

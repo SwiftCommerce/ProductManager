@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/vapor/console.git",
         "state": {
           "branch": null,
-          "revision": "96617dcdcbb7572cbff0645a2e3362c042bfffad",
-          "version": "3.0.3"
+          "revision": "aa38c8ae4d3d41f5ea553712fea3b0e80fcb0a1a",
+          "version": "3.0.4"
         }
       },
       {
@@ -51,8 +51,8 @@
         "repositoryURL": "https://github.com/vapor/fluent.git",
         "state": {
           "branch": null,
-          "revision": "8c2d3830a16a624cf004e6a225108f072d7f8ebc",
-          "version": "3.1.1"
+          "revision": "00b81a9362549facb8e2ac93b17d2a78599fce3b",
+          "version": "3.1.2"
         }
       },
       {
@@ -69,8 +69,8 @@
         "repositoryURL": "https://github.com/vapor/http.git",
         "state": {
           "branch": null,
-          "revision": "272b22be8cb3364e42a4701c2e0676e37480ec5a",
-          "version": "3.1.5"
+          "revision": "6973bf50dab8dd00e4daf8cb82ca72b33f5db016",
+          "version": "3.1.6"
         }
       },
       {
@@ -141,8 +141,8 @@
         "repositoryURL": "https://github.com/vapor/sql.git",
         "state": {
           "branch": null,
-          "revision": "a35cf1dced4ddd32bb2dc8b6e765aea7bcf8d6e0",
-          "version": "2.1.0"
+          "revision": "839cf96eba296d26151ff1d7a746e9fe35053584",
+          "version": "2.2.0"
         }
       },
       {
@@ -150,8 +150,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio.git",
         "state": {
           "branch": null,
-          "revision": "176dd6e8564d60e936b76f3a896d667ae3acba31",
-          "version": "1.10.0"
+          "revision": "035962e6b6e03c8721a91a9b96dc084289795cb4",
+          "version": "1.11.0"
         }
       },
       {
@@ -186,8 +186,8 @@
         "repositoryURL": "https://github.com/vapor/template-kit.git",
         "state": {
           "branch": null,
-          "revision": "db35b1c35aabd0f5db3abca0cfda7becfe9c43e2",
-          "version": "1.1.0"
+          "revision": "aff2d6fc65bfd04579b0201b31a8d6720239c1cf",
+          "version": "1.1.1"
         }
       },
       {

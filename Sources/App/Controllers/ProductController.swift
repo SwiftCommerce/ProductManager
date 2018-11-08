@@ -57,6 +57,9 @@ final class ProductController: RouteCollection {
         // Registers a GET route at `/products/categorized` with the router.
         router.get("categorized", use: categorized)
         
+        /// Registers a GET route at `products/search` with the router.
+        router.get("search", use: search)
+        
         // Registers a PATCH route at `/products/:prodcut` with the router.
         // This route automatically decodes the request's body to a `ProductUpdateBody` object.
         router.patch(ProductUpdateBody.self, at: Product.parameter, use: update)
@@ -113,6 +116,11 @@ final class ProductController: RouteCollection {
         return products.each(to: ProductResponseBody.self) { product in
             return Promise(product: product, on: request).futureResult
         }
+    }
+    
+    //// Get all the `Product` models that match request query-string parameters passed in.
+    func search(_ request: Request)throws -> Future<[Product]> {
+        return Product.search(on: request)
     }
     
     /// Updates to pivots that connect a `Product` model to other models.

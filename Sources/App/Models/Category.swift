@@ -14,7 +14,7 @@ final class Category: ProductModel {
     var isMain: Bool
     
     /// The name of the category.
-    let name: String
+    var name: String
     
     var createdAt: Date?
     var updatedAt: Date?

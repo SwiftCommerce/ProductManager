@@ -2,37 +2,6 @@ import FluentMySQL
 import FluentSQL
 import Vapor
 
-// MARK: - Request Body Type
-
-/// A decoded request body used to
-/// update a `Product` models connections to other models.
-struct ProductUpdateBody: Content {
-    
-    /// A wrapper type, allowing the request's body to have a nested strcuture:
-    ///
-    ///     {
-    ///       "prices": {"create": [], "delete": []}
-    ///     }
-    struct PricesUpdate: Content {
-        
-        /// The stricttre of the new `Price` child models for the `Product` model.
-        let create: [PriceContent]?
-        
-        /// The IDs of the `Price` model to dettach from the `Product` model.
-        let delete: [Price.ID]?
-    }
-    
-    /// A decoded JSON object to get the IDs of `Category` models
-    /// to attach to and detach from the product.
-    let categories: CategoryUpdateBody?
-    
-    /// A decoded JSON object to get the IDs of `Price` models
-    /// to attach to and detach from the product model.
-    let prices: PricesUpdate?
-}
-
-// MARK: - Controller
-
 /// A controller for API endpoints that make operations on the `products` database table.
 final class ProductController: RouteCollection {
     
@@ -56,7 +25,7 @@ final class ProductController: RouteCollection {
         
         // Registers a PATCH route at `/products/:prodcut` with the router.
         // This route automatically decodes the request's body to a `ProductUpdateBody` object.
-        router.patch(ProductUpdateBody.self, at: Product.parameter, use: update)
+        router.patch(ProductUpdateContent.self, at: Product.parameter, use: update)
         
         // Registers a DELETE route at `/products/:product` with the router.
         router.delete(Product.parameter, use: delete)
@@ -93,40 +62,13 @@ final class ProductController: RouteCollection {
     }
     
     /// Updates to pivots that connect a `Product` model to other models.
-    func update(_ request: Request, _ body: ProductUpdateBody)throws -> Future<ProductResponseBody> {
+    func update(_ request: Request, _ body: ProductUpdateContent)throws -> Future<ProductResponseBody> {
         
         // Get the model to update from the request's route parameters.
         let product = try request.parameters.next(Product.self)
         
-        // Get all models that have an ID in any if the request bodies' arrays.
-        let categoryIds = body.categories?.detach ?? []
-        let categoryIds2 = body.categories?.attach ?? []
-        let pricesDelete = body.prices?.delete ?? []
-        let pricesCreate = body.prices?.create ?? []
-        let detachCategories = Category.query(on: request).filter(\Category.id ~~ categoryIds).all()
-        let attachCategories = Category.query(on: request).filter(\Category.id ~~ categoryIds2).all()
-        
-        // Attach and detach the models fetched with the ID arrays.
-        // This means we either create or delete a row in a pivot table.
-        let categories = Async.flatMap(to: Void.self, product, detachCategories, attachCategories) { (product, detach, attach) in
-            let detached = detach.map { product.categories.detach($0, on: request) }.flatten(on: request)
-            let attached = try attach.map { try ProductCategory(product: product, category: $0).save(on: request) }.flatten(on: request)
-            
-            return [detached, attached.transform(to: ())].flatten(on: request)
-        }.transform(to: ())
-        
-        let prices = product.flatMap { product -> Future<Void> in
-            let id = try product.requireID()
-            let deleted = Price.query(on: request).filter(\.id ~~ pricesDelete).delete()
-            let created = try pricesCreate.map { try Price(content: $0, product: id).save(on: request) }.flatten(on: request)
-            
-            return [deleted, created.transform(to: ())].flatten(on: request)
-        }.transform(to: ())
-        
-        // Once all the attaching/detaching is complete, convert the updated model to a `ProductResponseBody` and return it.
-        return [categories, prices].flatten(on: request).flatMap(to: ProductResponseBody.self) {
-            return product.response(on: request)
-        }
+        // Update the product with the request body and save it.
+        return product.map(body.update).save(on: request).response(on: request)
     }
     
     // Deletes a `Product` model from that database and returns an HTTP status.

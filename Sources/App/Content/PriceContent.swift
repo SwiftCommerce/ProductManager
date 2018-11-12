@@ -6,7 +6,6 @@ struct PriceContent: Content {
     let activeFrom: Date?
     let activeTo: Date?
     let active: Bool?
-    let id: Int?
     let productID: Product.ID?
 }
 

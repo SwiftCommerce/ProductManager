@@ -82,7 +82,7 @@ final class CategoryController: RouteCollection {
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         
         // Get the category in the request's route parameters.
-        return try request.parameters.next(Category.self).flatMap(to: Category.self, { (category) in
+        return try request.parameters.next(Category.self).flatMap(to: Category.self) { (category) in
             
             // Delete all connections to category from products and categories.
             let detachCategories = try category.subCategories.pivots(on: request).delete()
@@ -91,10 +91,8 @@ final class CategoryController: RouteCollection {
             // Once the connections to sud-catefories have been updated,
             // return the category from the parameter
             return [detachCategories, detachProducts].flatten(on: request).transform(to: category)
-        }).flatMap(to: HTTPStatus.self, { (cateogory) in
             
             // All the connections are deleted, so now it is safe to delete the parent category from the database.
-            return cateogory.delete(on: request).transform(to: .noContent)
-        })
+        }.delete(on: request).transform(to: .noContent)
     }
 }

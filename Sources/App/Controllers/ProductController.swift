@@ -54,9 +54,6 @@ final class ProductController: RouteCollection {
         // Registers a GET route at `/products/:product` with the router.
         router.get(Product.parameter, use: show)
         
-        // Registers a GET route at `/products/categorized` with the router.
-        router.get("categorized", use: categorized)
-        
         // Registers a PATCH route at `/products/:prodcut` with the router.
         // This route automatically decodes the request's body to a `ProductUpdateBody` object.
         router.patch(ProductUpdateBody.self, at: Product.parameter, use: update)
@@ -93,26 +90,6 @@ final class ProductController: RouteCollection {
         // Get the specified model from the route's paramaters
         // and convert it to a `ProductResponseBody`
         return try request.parameters.next(Product.self).response(on: request)
-    }
-    
-    /// Get all the `Product` models connected to specified categories.
-    func categorized(_ request: Request)throws -> Future<[ProductResponseBody]> {
-        
-        // Get the IDs of the categories to get the products for.
-        let categoryIDs = try request.query.get([Category.ID].self, at: "category_ids")
-        
-        // Get the products that are joined to the categories, and sort them by category precedence.
-        let products = Product.query(on: request)
-               .join(\Product.id, to: \ProductCategory.productID)
-               .join(\ProductCategory.categoryID, to: \Category.id)
-               .filter(\ProductCategory.categoryID ~~ categoryIDs)
-               .sort(\Category.sort)
-               .all()
-        
-        // Convert each `Prooduct` model to a `ProductResponseBody` instance.
-        return products.each(to: ProductResponseBody.self) { product in
-            return Promise(product: product, on: request).futureResult
-        }
     }
     
     /// Updates to pivots that connect a `Product` model to other models.

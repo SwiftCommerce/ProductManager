@@ -23,9 +23,9 @@ final class ProductAttribute: MySQLPivot, ProductModel {
     var updatedAt: Date?
     var deletedAt: Date?
     
-    init(value: String, language: String, product: Product, attribute: Attribute)throws {
-        self.productID = try product.requireID()
-        self.attributeID = try attribute.requireID()
+    init(value: String, language: String, product: Product.ID, attribute: Attribute.ID) {
+        self.productID = product
+        self.attributeID = attribute
         self.value = value
         self.language = language
     }

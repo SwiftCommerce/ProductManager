@@ -14,7 +14,7 @@ final class ProductAttributesController: RouteCollection {
     func boot(router: Router) throws {
         
         // Create a router group, because all routes in this controller have the same parent path.
-        let attributes = router.grouped("products", Product.parameter, "attributes")
+        let attributes = router.grouped(Product.parameter, "attributes")
         
         // Registers a POST endpont at `products/:product/attributes`.
         // This route automaticly decodes the request's body to an `Attribute` model.

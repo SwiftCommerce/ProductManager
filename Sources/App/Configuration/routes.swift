@@ -18,6 +18,7 @@ public func routes(_ router: Router) throws {
     try versioned.register(collection: ProductController())
     try versioned.register(collection: CategoryController())
     try versioned.register(collection: AttributeController())
-    try versioned.register(collection: TranslationController())
     try versioned.register(collection: ProductAttributesController())
+    try versioned.register(collection: ProductTranslationController())
+    try versioned.register(collection: CategoryTranslationController(root: "categories"))
 }

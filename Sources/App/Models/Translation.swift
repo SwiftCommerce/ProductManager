@@ -8,7 +8,9 @@ import Foundation
 ///
 /// This protocol requires it's implementors to be a class, conform to `Content`, `Model`, `Migration`, and `Parameter`,
 /// and that it's `Database` type is `MySQLDatabase`, that `ID` is `String`, and `ResolvedParameter` is `Future<Self>`.
-protocol Translation: class, Content, Model, Migration, Parameter where Self.Database == MySQLDatabase, Self.ID == String, Self.ResolvedParameter == Future<Self> {
+protocol Translation: class, Content, Model, Migration, Parameter
+    where Self.Database == MySQLDatabase, Self.ID == String, Self.ResolvedParameter == Future<Self>
+{
     
     /// The name of the translation.
     /// This property is used for the model's database ID, instead of an `Int`.
@@ -22,6 +24,9 @@ protocol Translation: class, Content, Model, Migration, Parameter where Self.Dat
     
     /// The ID of the parent model for the translation.
     var parentID: Int { get }
+    
+    /// Creates a new instance of `Self`.
+    init(name: String, description: String, languageCode: String, parentID: Int)
 }
 
 /// Default implementations of methods and computed properties for the `Translation` protocol.

@@ -4,6 +4,7 @@ import Fluent
 
 /// A controller for all API endpoints that make operations on a product's attributes.
 final class ProductAttributesController: RouteCollection {
+    typealias Pivot = ProductAttribute
     
     /// Required by the `RouteCollection` protocol.
     /// Allows you to run this to add your routes to a router:
@@ -53,8 +54,16 @@ final class ProductAttributesController: RouteCollection {
     /// Fetches all the `Attribute` models connected to a `Product`.
     func index(_ request: Request)throws -> Future<[AttributeContent]> {
         
-        // Get the `Product` model from the route path, get all of the `Attribute` models connected to it, and return them.
-        return try request.parameters.next(Product.self).flatMap(to: [AttributeContent].self, { try $0.attributes.response(on: request) })
+        // The `productID` value of all the `ProductAttribute` pivots to get.
+        let product = try request.parameters.id(for: Product.self)
+        
+        // Get all the `ProductAttribute` and connected `Attribute` models that have the `Product` ID from the reset paramaters.
+        let productID = \Pivot.productID
+        let attributeID = \Pivot.attributeID
+        let attributes = Attribute.query(on: request).join(attributeID, to: \Attribute.id).filter(productID == product).alsoDecode(Pivot.self).all()
+
+        // Convert each `Attribute`/`ProductAttribute` pair into an `AttributeContent` instance.
+        return attributes.map { attributes in attributes.map(AttributeContent.init) }
     }
     
     /// Get an `Attribute` connected to a `Product` with a specified ID.

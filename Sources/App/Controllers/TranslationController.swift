@@ -30,7 +30,7 @@ final class TranslationController<Parent, Translation>: RouteCollection where
     
     func create(_ request: Request, content: TranslationContent)throws -> Future<TranslationResponseBody> {
         let parent = try request.parameters.id(for: Parent.self)
-        return Translation(content: content, parent: parent).save(on: request).response(on: request)
+        return Translation(content: content, parent: parent).create(on: request).response(on: request)
     }
     
     func index(_ request: Request)throws -> Future<[TranslationResponseBody]> {

@@ -35,8 +35,8 @@ extension Translation {
     ///
     /// - Parameter executor: The object used to get models connected to the current translation.
     /// - Returns: A `TranslationResponseBody`, wrapped in a future.
-    func response(on request: Request) -> Future<TranslationResponseBody> {
-        return Future.map(on: request) { return TranslationResponseBody(self) }
+    func response(on request: Request) -> Future<TranslationContent> {
+        return Future.map(on: request) { return TranslationContent(self) }
     }
     
     /// Generates the database table for the model
@@ -108,28 +108,5 @@ final class CategoryTranslation: Translation {
         self.description = description
         self.languageCode = languageCode
         self.parentID = parentID
-    }
-}
-
-// MARK: - Public
-
-/// A representation of a translation type that gets returned from a route handler.
-struct TranslationResponseBody: Content {
-    
-    /// The name of the translation
-    let name: String?
-    
-    /// The descripton of the trsnaltion
-    let description: String
-    
-    /// The language code for the translation.
-    let languageCode: String
-    
-    /// Creates a `TranslationResponseBody` from an object that conforms to `Translation`
-    /// and a price (only used if the `translation` parameter type is `ProductTranslation`).
-    init<Tran>(_ translation: Tran) where Tran: Translation {
-        self.name = translation.name
-        self.description = translation.description
-        self.languageCode = translation.languageCode
     }
 }

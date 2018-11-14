@@ -109,11 +109,11 @@ struct ProductResponseBody: Content {
     let status: ProductStatus
     let createdAt, updatedAt, deletedAt: Date?
     let attributes: [AttributeContent]
-    let translations: [TranslationResponseBody]
+    let translations: [TranslationContent]
     let categories: [CategoryResponseBody]
     let prices: [Price]
     
-    init(product: Product, attributes: [AttributeContent], translations: [TranslationResponseBody], categories: [CategoryResponseBody], prices: [Price]) {
+    init(product: Product, attributes: [AttributeContent], translations: [TranslationContent], categories: [CategoryResponseBody], prices: [Price]) {
         self.id = product.id
         self.sku = product.sku
         self.name = product.name
@@ -152,9 +152,7 @@ extension Promise where T == ProductResponseBody {
             let prices = try product.prices.query(on: request).all()
             
             // Get all the translations connected to the product and convert them to their response type.
-            let translations = try product.translations(with: request).flatMap(to: [TranslationResponseBody].self) { $0.map({ translation in
-                return translation.response(on: request)
-            }).flatten(on: request) }
+            let translations = try product.translations(with: request).map { $0.map(TranslationContent.init) }
             
             // Get all the categories connected to the product and convert them to their resonse type.
             let categories = product.categories(with: request).flatMap(to: [CategoryResponseBody].self) {

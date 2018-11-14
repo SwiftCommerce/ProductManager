@@ -36,8 +36,8 @@ extension Future where T: Translation {
     ///
     /// - Parameter executor: An object that can be used to query a model's table.
     /// - Returns: A future wrapping the public representation of the wrapped object.
-    func response(on request: Request) -> Future<TranslationResponseBody> {
-        return self.flatMap(to: TranslationResponseBody.self) { this in
+    func response(on request: Request) -> Future<TranslationContent> {
+        return self.flatMap(to: TranslationContent.self) { this in
             return this.response(on: request)
         }
     }

@@ -51,9 +51,9 @@ struct CategoryResponseBody: Content {
     let isMain: Bool
     let createdAt, updatedAt, deletedAt: Date?
     let subcategories: [CategoryResponseBody]
-    let translations: [TranslationResponseBody]
+    let translations: [TranslationContent]
     
-    init(category: Category, subcategories: [CategoryResponseBody], translations: [TranslationResponseBody]) {
+    init(category: Category, subcategories: [CategoryResponseBody], translations: [TranslationContent]) {
         self.id = category.id
         self.name = category.name
         self.sort = category.sort
@@ -94,7 +94,7 @@ extension Promise where T == CategoryResponseBody {
             try Async.map(to: CategoryResponseBody.self, categories, category.translations(with: request)) { (subCategories, translations) in
                 
                 // Actually create the `CategoryResponseBody` with the data passed in.
-                return CategoryResponseBody(category: category, subcategories: subCategories, translations: translations.map({ TranslationResponseBody($0) }))
+                return CategoryResponseBody(category: category, subcategories: subCategories, translations: translations.map(TranslationContent.init))
             }.do { (body) in
                 
                 // `CategoryResponseBody` creation succeded.

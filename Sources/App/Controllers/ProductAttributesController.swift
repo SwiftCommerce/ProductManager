@@ -96,15 +96,13 @@ final class ProductAttributesController: RouteCollection {
         // Update the pivot's `value` property if a new value was passed into the request body.
         // Otherwise, just get the pivot.
         let query = ProductAttribute.query(on: request).filter(\.productID == product).filter(\.attributeID == id)
-        if let value = content.value {
-            _ = query.update(\.value, to: value)
-        }
-        let pivot = query.first()
+        let update = content.value == nil ? request.future() : query.update(\.value, to: content.value!).run()
+        let pivot = update.flatMap(query.first)
         
         // Get the attribute that has the ID passed in and is connected to the product ID passed in.
         let productID = \ProductAttribute.productID
         let attributeID = \ProductAttribute.attributeID
-        let attribute = Attribute.query(on: request).join(\Attribute.id, to: attributeID).filter(\.id == id).filter(productID == product).first()
+        let attribute = Attribute.query(on: request).join(attributeID, to: \Attribute.id).filter(\.id == id).filter(productID == product).first()
         
         // Create a response body with the attribute and pivot data, including the type, name, and value of the attribute.
         let error = Abort(.notFound)

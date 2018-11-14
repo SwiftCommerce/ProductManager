@@ -103,12 +103,15 @@ final class ProductAttributesController: RouteCollection {
     /// Detaches a given `Attribute` from its parent `Prodcut` model.
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         
-        // Get the `Paroduct` and `Attribute` models passed into the request's route parameters.
-        return try flatMap(request.parameters.next(Product.self), request.parameters.next(Attribute.self), { (product, attribute) in
-            
-            // Get the prodcut's attributes, and detach the attribute passed in.
-            return product.attributes.detach(attribute, on: request).transform(to: .noContent)
-        })
+        // Get `Prodduct` and `Attribute` IDs of the pivot to delete.
+        let product = try request.parameters.id(for: Product.self)
+        let attribute = try request.parameters.id(for: Attribute.self)
+        
+        // Delete all pivots that have matching `Product` and `Attribute` IDs.
+        let delete = ProductAttribute.query(on: request).filter(\.productID == product).filter(\.attributeID == attribute).delete()
+        
+        // Return HTTP 204 (No Content) status.
+        return delete.transform(to: .noContent)
     }
 }
 

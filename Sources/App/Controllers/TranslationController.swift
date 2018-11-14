@@ -42,24 +42,24 @@ final class TranslationController<Parent, Translation>: RouteCollection where
     
     func get(_ request: Request)throws -> Future<TranslationResponseBody> {
         let parent = try request.parameters.id(for: Parent.self)
-        let name = try request.parameters.id(for: Translation.self)
-        let translation = Translation.query(on: request).filter(\.parentID == parent).filter(\.name == name).first()
+        let id = try request.parameters.id(for: Translation.self)
+        let translation = Translation.query(on: request).filter(\.parentID == parent).filter(\.id == id).first()
         
         return translation.unwrap(or: Abort(.notFound)).response(on: request)
     }
     
     func update(_ request: Request, content: TranslationUpdateContent)throws -> Future<TranslationResponseBody> {
         let parent = try request.parameters.id(for: Parent.self)
-        let name = try request.parameters.id(for: Translation.self)
-        let translation = Translation.query(on: request).filter(\.parentID == parent).filter(\.name == name).first()
+        let id = try request.parameters.id(for: Translation.self)
+        let translation = Translation.query(on: request).filter(\.parentID == parent).filter(\.id == id).first()
         
         return translation.unwrap(or: Abort(.notFound)).map(content.update).save(on: request).response(on: request)
     }
     
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         let parent = try request.parameters.id(for: Parent.self)
-        let name = try request.parameters.id(for: Translation.self)
+        let id = try request.parameters.id(for: Translation.self)
         
-        return Translation.query(on: request).filter(\.parentID == parent).filter(\.name == name).delete().transform(to: .noContent)
+        return Translation.query(on: request).filter(\.parentID == parent).filter(\.id == id).delete().transform(to: .noContent)
     }
 }

@@ -8,13 +8,12 @@ import Foundation
 ///
 /// This protocol requires it's implementors to be a class, conform to `Content`, `Model`, `Migration`, and `Parameter`,
 /// and that it's `Database` type is `MySQLDatabase`, that `ID` is `String`, and `ResolvedParameter` is `Future<Self>`.
-protocol Translation: class, Content, Model, Migration, Parameter
-    where Self.Database == MySQLDatabase, Self.ID == String, Self.ResolvedParameter == Future<Self>
+protocol Translation: class, Content, MySQLModel, Migration, Parameter
+    where Self.ResolvedParameter == Future<Self>
 {
     
     /// The name of the translation.
-    /// This property is used for the model's database ID, instead of an `Int`.
-    var name: String? { get set }
+    var name: String { get }
     
     /// The description of the translation.
     var description: String { get set }
@@ -32,12 +31,6 @@ protocol Translation: class, Content, Model, Migration, Parameter
 /// Default implementations of methods and computed properties for the `Translation` protocol.
 extension Translation {
     
-    /// The default implementation of the `idKey` property required by the `Model` protocol.
-    /// The keypath returned defaults to the model's `name` property.
-    static var idKey: WritableKeyPath<Self, String?> {
-        return \.name
-    }
-    
     /// Create a `TranslationResponseBody` from the current translation model.
     ///
     /// - Parameter executor: The object used to get models connected to the current translation.
@@ -54,9 +47,11 @@ final class ProductTranslation: Translation {
     
     static let entity: String = "productTranslations"
     
+    /// The unique ID for the model.
+    var id: Int?
+    
     /// The name of the translation.
-    /// This property is used as the database identifier.
-    var name: String?
+    let name: String
     
     /// A description of the translation.
     var description: String
@@ -81,9 +76,12 @@ final class CategoryTranslation: Translation {
     
     static let entity: String = "categoryTranslations"
     
+    /// The unique ID for the model.
+    var id: Int?
+    
     /// The name of the translation.
     /// This property is used as the database identifier.
-    var name: String?
+    let name: String
     
     /// A description of the translation.
     var description: String

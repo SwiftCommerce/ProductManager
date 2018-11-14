@@ -60,17 +60,19 @@ final class ProductAttributesController: RouteCollection {
     /// Get an `Attribute` connected to a `Product` with a specified ID.
     func show(_ request: Request)throws -> Future<AttributeContent> {
         
-        // Get the `Int` parameter from the request's path.
-        let id = try request.parameters.next(Int.self)
+        // Get the specified `Product` model from the request's route parameters.
+        let productID = try request.parameters.id(for: Product.self)
         
-        // Get the `Product` model specified in the route path.
-        return try request.parameters.next(Product.self).flatMap(to: [AttributeContent].self) { (product) in
-            
-            // Get the first attribute with the `Int` parameter as it's ID from all attributes connected to the product.
-            return try product.attributes.response(on: request, pivotQuery: ProductAttribute.query(on: request).filter(\.attributeID == id))
-            
-            // Gets the first element of the array (there should only be one or zero elements) and unwrap it.
-        }.map(to: AttributeContent?.self, { $0.first }).unwrap(or: Abort(.notFound, reason: "No attribute connected to product with ID '\(id)'"))
+        // Get the ID of the attribute to update.
+        let attributeID = try request.parameters.id(for: Attribute.self)
+        
+        // Get the `ProductAttribute` and `Attribute` models required to create a `AttributeContent` instance.
+        let pivot = ProductAttribute.query(on: request).filter(\.productID == productID).filter(\.attributeID == attributeID).first()
+        let attribute = Attribute.query(on: request).filter(\.id == attributeID).first()
+        
+        // Convert the pivot and attribute models to an `AttributeContent` instance if they both exist.
+        let error = Abort(.notFound)
+        return map(attribute.unwrap(or: error), pivot.unwrap(or: error), AttributeContent.init)
     }
     
     /// Updates an attribute's value.

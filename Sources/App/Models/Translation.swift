@@ -38,6 +38,16 @@ extension Translation {
     func response(on request: Request) -> Future<TranslationResponseBody> {
         return Future.map(on: request) { return TranslationResponseBody(self) }
     }
+    
+    /// Generates the database table for the model
+    ///
+    /// We use a custom implementation so we can have a uniques `name` property.
+    public static func prepare(on connection: Database.Connection) -> Future<Void> {
+        return Database.create(self, on: connection) { builder in
+            try addProperties(to: builder)
+            builder.unique(on: \.name)
+        }
+    }
 }
 
 // MARK: - Implementations

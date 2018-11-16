@@ -114,28 +114,38 @@ struct QueryStructure {
     var joins: [String]
     var filter: [Query]
     var having: [Query]
+    var limit: (offset: Int, rowCount: Int)?
     
     init(joins: [String] = [], filter: [Query] = [], having: [Query] = []) {
         self.joins = joins
         self.filter = filter
         self.having = having
+        self.limit = nil
     }
     
-    func serelize(afterFilter intermediate: Query = Query("", [])) -> (query: String, binds: [Encodable]) {
+    func serelize(afterFilter intermediate: Query? = nil) -> (query: String, binds: [Encodable]) {
         var query = ""
+        var binds: [Encodable] = []
         
         if self.joins.count > 0 {
             query.append(self.joins.joined(separator: " ") + " ")
         }
         if self.filter.count > 0 {
             query.append("WHERE " + self.filter.map { $0.query }.joined(separator: " AND ") + " ")
+            binds.append(contentsOf: self.filter.flatMap { $0.binds })
         }
-        query.append(intermediate.query)
+        if let inter = intermediate {
+            query.append(inter.query)
+            binds.append(contentsOf: inter.binds)
+        }
         if self.having.count > 0 {
             query.append(contentsOf: " HAVING " + self.having.map { $0.query }.joined(separator: " AND "))
+            binds.append(contentsOf: self.having.flatMap { $0.binds })
         }
-        
-        let binds = Array(self.filter.map { $0.binds }.joined()) + intermediate.binds + Array(self.having.map { $0.binds }.joined())
+        if let limit = self.limit {
+            query.append(contentsOf: " LIMIT ?, ?")
+            binds.append(contentsOf: [limit.offset, limit.rowCount])
+        }
         
         return (query, binds)
     }

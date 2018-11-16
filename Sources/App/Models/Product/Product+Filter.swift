@@ -20,6 +20,8 @@ extension Product {
         try structre.add(structure: self.priceFilter(for: request))
         try structre.add(structure: self.categoryFilter(on: request))
         try structre.add(structure: self.attributeFilter(on: request))
+        structre.limit = try self.pagination(on: request)
+        
         let serelized = structre.serelize(afterFilter: .init(" GROUP BY " + Product.table + ".`id` ", []))
         
         let query = "SELECT " + Product.table + ".* FROM " + Product.table + " " + serelized.query + ";"
@@ -101,6 +103,24 @@ extension Product {
             " GROUP BY " + ProductAttribute.table + ".`id`"
         
         return (query, serelized.binds)
+    }
+    
+    private static func pagination(on request: Request)throws -> (offset: Int, rowCount: Int)? {
+        let page = try request.query.get(Int?.self, at: "page")
+        let pageSize = try request.query.get(Int?.self, at: "pageSize")
+        
+        if page == nil && pageSize == nil {
+            return nil
+        }
+        
+        guard let offset = page, let rowCount = pageSize else {
+            throw Abort(.badRequest, reason: "Both `page` and `pageSize` values must be passed in for pagination")
+        }
+        guard offset > 0 && rowCount > 0 else {
+            throw Abort(.badRequest, reason: "`page` and `pageSize` values must be greater than `0`")
+        }
+        
+        return ((offset * rowCount) - (rowCount - 1), rowCount)
     }
 }
 

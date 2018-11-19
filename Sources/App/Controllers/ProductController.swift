@@ -47,10 +47,8 @@ final class ProductController: RouteCollection {
     }
     
     /// Get all the products from the database.
-    func index(_ request: Request)throws -> Future<[ProductResponseBody]> {
-        return Product.search(on: request).flatMap() { products in
-            return products.map { Promise(product: $0, on: request).futureResult }.flatten(on: request)
-        }
+    func index(_ request: Request)throws -> Future<SearchResult> {
+        return Product.search(on: request)
     }
     
     /// Get the `Product` model from the database with a given ID.

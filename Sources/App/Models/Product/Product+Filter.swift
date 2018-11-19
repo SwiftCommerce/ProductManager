@@ -3,29 +3,59 @@ import Foundation
 import FluentSQL
 import Vapor
 
+typealias QueryList = [String: (sql: String, bindings: [Encodable])]
+struct SearchResult: Content {
+    let products: [ProductResponseBody]
+    let count: Int
+}
+
 extension Product {
-    static func search(on request: Request) -> Future<[Product]> {
+    static func search(on request: Request) -> Future<SearchResult> {
         do {
-            let search = try self.query(for: request)
-            return request.withPooledConnection(to: .mysql) { conn -> Future<[Product]> in
-                return conn.raw(search.query).binds(search.bindings).all(decoding: Product.self)
+            let list = try self.query(for: request)
+            guard let productQuery = list["products"] else {
+                throw Abort(.internalServerError, reason: "Missing query for product search")
+            }
+            let countQuery = list["count"] ?? productQuery
+            
+            let products = request.withPooledConnection(to: .mysql) { conn -> Future<[ProductResponseBody]> in
+                let products = conn.raw(productQuery.sql).binds(productQuery.bindings).all(decoding: Product.self)
+                return products.flatMap { products in products.map { Promise(product: $0, on: request).futureResult }.flatten(on: request) }
+            }
+            let count = request.withPooledConnection(to: .mysql) { conn in
+                return conn.raw(countQuery.sql).binds(countQuery.bindings).all(decoding: Product.self)
+            }
+            
+            return map(products, count) { products, count in
+                return SearchResult(products: products, count: count.count)
             }
         } catch let error {
             return request.future(error: error)
         }
     }
     
-    private static func query(for request: Request)throws -> (query: String, bindings: [Encodable]) {
+    private static func query(for request: Request)throws -> QueryList {
         var structre = QueryStructure()
+        
         try structre.add(structure: self.priceFilter(for: request))
         try structre.add(structure: self.categoryFilter(on: request))
         try structre.add(structure: self.attributeFilter(on: request))
-        structre.limit = try self.pagination(on: request)
         
-        let serelized = structre.serelize(afterFilter: .init(" GROUP BY " + Product.table + ".`id` ", []))
-        
-        let query = "SELECT " + Product.table + ".* FROM " + Product.table + " " + serelized.query + ";"
-        return (query, serelized.binds)
+        if let pagination = try self.pagination(on: request) {
+            let count = structre.serelize(afterFilter: .init(" GROUP BY " + Product.table + ".`id` ", []))
+            
+            structre.limit = pagination
+            let products = structre.serelize(afterFilter: .init(" GROUP BY " + Product.table + ".`id` ", []))
+            
+            return [
+                "products": ("SELECT " + Product.table + ".* FROM " + Product.table + " " + products.query + ";", products.binds),
+                "count": ("SELECT " + Product.table + ".* FROM " + Product.table + " " + count.query + ";", count.binds)
+            ]
+        } else {
+            let serelized = structre.serelize(afterFilter: .init(" GROUP BY " + Product.table + ".`id` ", []))
+            let query = "SELECT " + Product.table + ".* FROM " + Product.table + " " + serelized.query + ";"
+            return ["products": (query, serelized.binds)]
+        }
     }
     
     private static func priceFilter(for request: Request)throws -> QueryStructure {

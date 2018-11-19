@@ -1,0 +1,3448 @@
+{
+	"info": {
+		"_postman_id": "ce8af33c-b407-4451-b337-d8a6b933aae1",
+		"name": "Product Manager",
+		"description": "The Product Manager service handles an e-commerce platform's product catalog. This includes the product information, prices, and categorization.\n\nThis service is based on 6 models. `Product`, `Price`, `Category`, `Attribute`, `ProductTanslation`, and `CategoryTranslation`. Each model's resource supports the basic CRUD operations. You can create a new model, get all the models, get a single model by its ID, update the model's mutable properties, and delete a model. The `GET` routes are open, meaning anyone can access them. The routes used for mutation, `POST`, `PATCH`, and `DELETE`, require authentication.\n\nAuthentication uses JWT bearer tokens in the request's headers. Token generation should be handled by a different service while the token's public key is registered with the Product Manager so it can verify incoming tokens.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Prices",
+					"item": [
+						{
+							"name": "Creates Price for Product",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "42e2af22-7d0a-4898-b1d6-03f8456cf68a",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Your test name\", function () {",
+											"    var json = pm.response.json();",
+											"    pm.environment.set(\"price\", json.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "cents",
+											"value": "4158",
+											"description": "(required) The total value of the smallest subunit of the currency used, i.e. cents for US dollars.",
+											"type": "text"
+										},
+										{
+											"key": "currency",
+											"value": "AUD",
+											"description": "(required) The currency code for the price model.",
+											"type": "text"
+										},
+										{
+											"key": "activeFrom",
+											"value": "-62135596800",
+											"description": "The date-time the price model starts to be valid.",
+											"type": "text"
+										},
+										{
+											"key": "activeTo",
+											"value": "64217836800",
+											"description": "The date-time the price model is no longer valid.",
+											"type": "text"
+										},
+										{
+											"key": "active",
+											"value": "true",
+											"description": "Whether the price model will be valid or not.",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/prices",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"prices"
+									]
+								},
+								"description": "Creates a new price model for a product. This is for if you want to support another currency or have a temporary price change."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Product Prices",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/prices",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"prices"
+									]
+								},
+								"description": "Gets all the price objects for a single product model."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Price for Product",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/prices/{{price}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"prices",
+										"{{price}}"
+									]
+								},
+								"description": "Gets a single price model by ID for a product model."
+							},
+							"response": [
+								{
+									"name": "Get Price for Product",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/{{product}}/prices/{{price}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"{{product}}",
+												"prices",
+												"{{price}}"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "136"
+										},
+										{
+											"key": "date",
+											"value": "Mon, 12 Nov 2018 15:04:35 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"activeTo\": \"4001-01-01T00:00:00Z\",\n    \"active\": true,\n    \"id\": 1,\n    \"productID\": 1,\n    \"cents\": 3000,\n    \"activeFrom\": \"0001-01-01T00:00:00Z\",\n    \"currency\": \"USD\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Update Price for Product",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "cents",
+											"value": "3050",
+											"description": "The new amount for the price.",
+											"type": "text"
+										},
+										{
+											"key": "activeFrom",
+											"value": "981244800",
+											"description": "The new date-time when the price becomes valid.",
+											"type": "text"
+										},
+										{
+											"key": "activeTo",
+											"value": "4136918400",
+											"description": "The new date-time when the price becomes invalid.",
+											"type": "text"
+										},
+										{
+											"key": "active",
+											"value": "true",
+											"description": "The updated status for the price model.",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/prices/{{price}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"prices",
+										"{{price}}"
+									]
+								},
+								"description": "Updates the properties of a price model with a given ID that belongs to a product model."
+							},
+							"response": []
+						},
+						{
+							"name": "Remove Price from Product",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/prices/{{price}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"prices",
+										"{{price}}"
+									]
+								},
+								"description": "Deletes a price model that is connected to a product."
+							},
+							"response": []
+						}
+					],
+					"description": "The `Price` model is a child of `Product`. It holds any information about the cost of a single `Product` model such as `currency`, `cents`, and the date range of when the price is valid.\n\nWhile you usually have multiple prices for a `Product` to suuport different currencies, you can also create prices with smaller date ranges for temporary price increases or drops.\n\nThe `cents` property of a `Price` holds the amount of the smallest currency subunit that the model is equal to, i.e. US cent or Russian kopeyka. This is done to prevent the price's amount from shifting over time.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "933b1923-e028-46e9-8016-2f5a39cdb4f1",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "74947a3f-197c-472d-af01-4250eb177bc4",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Attributes",
+					"item": [
+						{
+							"name": "Add Attribute to Product",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "attributeID",
+											"value": "1",
+											"description": "The ID of the attribue to connect to the product.",
+											"type": "text"
+										},
+										{
+											"key": "value",
+											"value": "21",
+											"description": "The value of the attribute. This should relate to the attribute's type",
+											"type": "text"
+										},
+										{
+											"key": "language",
+											"value": "en",
+											"description": "The language code for the attribute's value",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/attributes",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"attributes"
+									]
+								},
+								"description": "Connects an existing `Attribute` model a product, with a new value and language code."
+							},
+							"response": [
+								{
+									"name": "Add Attribute to Product",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/x-www-form-urlencoded",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "attributeID",
+													"value": "1",
+													"description": "The ID of the attribue to connect to the product.",
+													"type": "text"
+												},
+												{
+													"key": "value",
+													"value": "21",
+													"description": "The value of the attribute. This should relate to the attribute's type",
+													"type": "text"
+												},
+												{
+													"key": "language",
+													"value": "en",
+													"description": "The language code for the attribute's value",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/{{product}}/attributes",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"{{product}}",
+												"attributes"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "67"
+										},
+										{
+											"key": "date",
+											"value": "Wed, 14 Nov 2018 16:13:44 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"language\": \"en\",\n    \"id\": 1,\n    \"value\": \"21\",\n    \"name\": \"size\",\n    \"type\": \"number\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Product Attributes",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "c3a9d58d-b30b-435a-937a-99267cd94679",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"pm.test(\"Your test name\", function () {",
+											"    var json = pm.response.json();",
+											"    pm.environment.set(\"attribute\", json[0].id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/attributes",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"attributes"
+									]
+								},
+								"description": "Gets the attribute models connected to a product with a given ID."
+							},
+							"response": [
+								{
+									"name": "Get Product Attributes",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/{{product}}/attributes",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"{{product}}",
+												"attributes"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "137"
+										},
+										{
+											"key": "date",
+											"value": "Tue, 13 Nov 2018 18:25:29 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "[\n    {\n        \"language\": \"es\",\n        \"id\": 1,\n        \"value\": \"20\",\n        \"name\": \"size\",\n        \"type\": \"number\"\n    },\n    {\n        \"language\": \"es\",\n        \"id\": 2,\n        \"value\": \"21\",\n        \"name\": \"color\",\n        \"type\": \"color\"\n    }\n]"
+								}
+							]
+						},
+						{
+							"name": "Get Attribute for Product",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/attributes/{{attribute}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"attributes",
+										"{{attribute}}"
+									]
+								},
+								"description": "Gets an `Attribute` model that is connected to a `Product` model with specific IDs."
+							},
+							"response": [
+								{
+									"name": "Get Attribute for Product",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/{{product}}/attributes/{{attribute}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"{{product}}",
+												"attributes",
+												"{{attribute}}"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "67"
+										},
+										{
+											"key": "date",
+											"value": "Wed, 14 Nov 2018 16:57:35 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"language\": \"es\",\n    \"id\": 1,\n    \"value\": \"20\",\n    \"name\": \"size\",\n    \"type\": \"number\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Update Attribute Value for Product",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "value",
+											"value": "22.5",
+											"description": "The new value for the `value` property of the attribute.",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/attributes/{{attribute}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"attributes",
+										"{{attribute}}"
+									]
+								},
+								"description": "Updates the `value` property of an `Attribute` model that is connected to a `Product` model."
+							},
+							"response": []
+						},
+						{
+							"name": "Rmove Attribute from Product",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/attributes/{{attribute}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"attributes",
+										"{{attribute}}"
+									]
+								},
+								"description": "Detaches an `Attribute` model from a `Product`, discarding the `value` and `language` property values."
+							},
+							"response": [
+								{
+									"name": "Rmove Attribute from Product",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/{{product}}/attributes/{{attribute}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"{{product}}",
+												"attributes",
+												"{{attribute}}"
+											]
+										}
+									},
+									"status": "No Content",
+									"code": 204,
+									"_postman_previewlanguage": "plain",
+									"header": [
+										{
+											"key": "date",
+											"value": "Wed, 14 Nov 2018 17:39:23 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": null
+								}
+							]
+						}
+					],
+					"description": "Under the hood, an `Attribute` and `Product` model are not connected with a parent/child relationship, but a sibling relationship through a `ProductAttribute` model. An `Attribute` holds the `name` and `type` information, but the pivot table holds the attribute's `value`. This is to allow felxibility in the relationship betwwen `Product` instances and `Product` model searching.\n\nThe `Attribute.type` property is for the front-end to dynamically generate the front-end based on the attribute's value. For example, if you have an `Attribute` with a type `size`, you could generate a dropdown for each value, but if you have a type `bool`, you coulkd have a toggle switch.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "5248a105-7096-4b8e-9a83-ea7ba37fb556",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "506a6f9d-3e27-4c1b-b819-4975bb80ac52",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Translations",
+					"item": [
+						{
+							"name": "Create Translation for Product",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "ebaf635a-9286-401d-baf4-f8696d639686",
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"pm.test(\"Your test name\", function () {",
+											"    var json = pm.response.json();",
+											"   pm.environment.set(\"product_translation\", json.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "name",
+											"value": "Deutsche",
+											"description": "The identifier for the translation model",
+											"type": "text"
+										},
+										{
+											"key": "language",
+											"value": "de",
+											"description": "The ISO language code for the translation",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "Für alle streampunker",
+											"description": "The translated text for the connected product.",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/translations",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"translations"
+									]
+								},
+								"description": "Adds a translation to a `Product` model with a gicen ID."
+							},
+							"response": [
+								{
+									"name": "Create Translation for Product",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/x-www-form-urlencoded",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "name",
+													"value": "Deutsche",
+													"description": "The identifier for the translation model",
+													"type": "text"
+												},
+												{
+													"key": "language",
+													"value": "de",
+													"description": "The ISO language code for the translation",
+													"type": "text"
+												},
+												{
+													"key": "description",
+													"value": "Für alle streampunker",
+													"description": "The translated text for the connected product.",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/{{product}}/translations",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"{{product}}",
+												"translations"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "78"
+										},
+										{
+											"key": "date",
+											"value": "Wed, 14 Nov 2018 18:31:48 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"name\": \"Deutsche\",\n    \"languageCode\": \"de\",\n    \"description\": \"Für alle streampunker\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Translations for Product",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/translations",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"translations"
+									]
+								},
+								"description": "Get all `Translation` models for a single `Product` model with a given ID."
+							},
+							"response": [
+								{
+									"name": "Get Translations for Product",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/{{product}}/translations",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"{{product}}",
+												"translations"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "80"
+										},
+										{
+											"key": "date",
+											"value": "Wed, 14 Nov 2018 18:35:18 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "[\n    {\n        \"name\": \"Deutsche\",\n        \"languageCode\": \"de\",\n        \"description\": \"Für alle streampunker\"\n    }\n]"
+								}
+							]
+						},
+						{
+							"name": "Get Translation by ID for Product",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/translations/{{product_translation}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"translations",
+										"{{product_translation}}"
+									]
+								},
+								"description": "Gets a single `Translation` model connected to a `Product` by ID"
+							},
+							"response": [
+								{
+									"name": "Get Translation by ID for Product",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/{{product}}/translations/{{product_translation}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"{{product}}",
+												"translations",
+												"{{product_translation}}"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "78"
+										},
+										{
+											"key": "date",
+											"value": "Wed, 14 Nov 2018 22:00:56 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"name\": \"Deutsche\",\n    \"languageCode\": \"de\",\n    \"description\": \"Für alle streampunker\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Update Translation for Product",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "description",
+											"value": "Für alle dampfpunker",
+											"description": "The new description value for the translation.",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/translations/{{product_translation}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"translations",
+										"{{product_translation}}"
+									]
+								},
+								"description": "Updates the `description` property of a `Translation` model connected to a `Product`."
+							},
+							"response": [
+								{
+									"name": "Update Translation for Product",
+									"originalRequest": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/x-www-form-urlencoded",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "description",
+													"value": "Für alle dampfpunker",
+													"description": "The new description value for the translation.",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/{{product}}/translations/{{product_translation}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"{{product}}",
+												"translations",
+												"{{product_translation}}"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "77"
+										},
+										{
+											"key": "date",
+											"value": "Wed, 14 Nov 2018 22:01:33 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"name\": \"Deutsche\",\n    \"languageCode\": \"de\",\n    \"description\": \"Für alle dampfpunker\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Delete Trabslation from Product",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}/translations/{{product_translation}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}",
+										"translations",
+										"{{product_translation}}"
+									]
+								},
+								"description": "Deletes a `Tranbslation` model that is connected to a `Product`."
+							},
+							"response": [
+								{
+									"name": "Delete Trabslation from Product",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/{{product}}/translations/{{product_translation}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"{{product}}",
+												"translations",
+												"{{product_translation}}"
+											]
+										}
+									},
+									"status": "No Content",
+									"code": 204,
+									"_postman_previewlanguage": "plain",
+									"header": [
+										{
+											"key": "date",
+											"value": "Wed, 14 Nov 2018 22:02:49 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": null
+								}
+							]
+						}
+					],
+					"description": "A `Translation` model can be used to store a translation of a `Product` model's `description` property in any language.\n\n**Note:** A product's `Translation` model is stored as a child model in `ProductTranslation` and is not conneted to `CategoryTranslation` in any way.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "1b569089-e255-46ef-92cc-32cec662dbc9",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "2dd805ca-d9cb-4ef5-9ff8-2e908739a93e",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Create Product",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "0aad5c4c-f9dd-4c06-b897-1c1b2141406b",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Your test name\", function () {",
+									"    var json = pm.response.json();",
+									"    pm.environment.set(\"product\", json.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"sku\": \"A974726B-1DF0-44D8-AFCF-B66F3862153B\",\n\t\"name\": \"Earl Grey Tea\",\n\t\"description\": \"Pick a good book a snuggle in.\",\n\t\"status\": 1,\n\t\"prices\": []\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products"
+							]
+						},
+						"description": "Creates a new product model."
+					},
+					"response": [
+						{
+							"name": "Create Product",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"sku\": \"A974726B-1DF0-44D8-AFCF-B66F3862153B\",\n\t\"name\": \"Earl Grey Tea\",\n\t\"description\": \"Pick a good book a snuggle in.\",\n\t\"status\": 1,\n\t\"prices\": []\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "content-length",
+									"value": "196"
+								},
+								{
+									"key": "date",
+									"value": "Mon, 12 Nov 2018 16:52:24 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": 1,\n    \"prices\": [],\n    \"id\": 9,\n    \"sku\": \"A974726B-1DF0-44D8-AFCF-B66F3862153B\",\n    \"categories\": [],\n    \"attributes\": [],\n    \"translations\": [],\n    \"name\": \"Earl Grey Tea\",\n    \"description\": \"Pick a good book a snuggle in.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products?priceMax=80000&priceMin=3000&categories[]=food&attributes[manufacturer]=Bakerism",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products"
+							],
+							"query": [
+								{
+									"key": "priceMax",
+									"value": "80000",
+									"description": "The maximum price a product can have in any currency to be in the result set"
+								},
+								{
+									"key": "priceMin",
+									"value": "3000",
+									"description": "The minimum price a product can have in any currency to be in the result set"
+								},
+								{
+									"key": "categories[]",
+									"value": "food",
+									"description": "The categories the products must in to be in the result set"
+								},
+								{
+									"key": "attributes[manufacturer]",
+									"value": "Bakerism",
+									"description": "The names and values of the attributes a product must have to be in the result set"
+								}
+							]
+						},
+						"description": "Gets all the products in the database. You can limit the products received back by passing in search terms, including the minimum price of the product, the max price of the product, the categories the product is in, and the key/value attribute pairs that the product must have."
+					},
+					"response": [
+						{
+							"name": "Search all Products",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/search?priceMax=80000&priceMin=3000&categories[]=food&attributes[manufacturer]=Bakerism",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"search"
+									],
+									"query": [
+										{
+											"key": "priceMax",
+											"value": "80000",
+											"description": "The maximum price a product can have in any currency to be in the result set"
+										},
+										{
+											"key": "priceMin",
+											"value": "3000",
+											"description": "The minimum price a product can have in any currency to be in the result set"
+										},
+										{
+											"key": "categories[]",
+											"value": "food",
+											"description": "The categories the products must in to be in the result set"
+										},
+										{
+											"key": "attributes[manufacturer]",
+											"value": "Bakerism",
+											"description": "The names and values of the attributes a product must have to be in the result set"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "content-length",
+									"value": "508"
+								},
+								{
+									"key": "date",
+									"value": "Fri, 09 Nov 2018 13:39:47 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"status\": 0,\n        \"id\": 1,\n        \"name\": \"Plum Pudding\",\n        \"description\": \"Very plummy\",\n        \"sku\": \"358BD17B-67A6-4E02-B1DF-206109C0989F\"\n    },\n    {\n        \"status\": 0,\n        \"id\": 2,\n        \"name\": \"Gingerbread\",\n        \"description\": \"Sugar and spice\",\n        \"sku\": \"7B3195BE-A850-424E-9853-EA1E204B6C94\"\n    },\n    {\n        \"status\": 1,\n        \"id\": 3,\n        \"name\": \"Muffins\",\n        \"description\": \"With pumpkin and nuts, covered with stroodle\",\n        \"sku\": \"7ADBF7A0-3C91-4128-9FDD-818CCF0B69D1\"\n    },\n    {\n        \"status\": 1,\n        \"id\": 4,\n        \"name\": \"Mincemeat Pie\",\n        \"description\": \"The finest pastery in town\",\n        \"sku\": \"8CB1DAB7-C6C8-4DFF-9D65-9A35E693E123\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Product with ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/{{product}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"{{product}}"
+							]
+						},
+						"description": "Gets a single product with a given ID from the database, along with its metadata."
+					},
+					"response": [
+						{
+							"name": "Get Product with ID",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/{{product}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"{{product}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "content-length",
+									"value": "749"
+								},
+								{
+									"key": "date",
+									"value": "Mon, 12 Nov 2018 13:29:55 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": 0,\n    \"prices\": [\n        {\n            \"activeTo\": \"4001-01-01T00:00:00Z\",\n            \"active\": true,\n            \"id\": 1,\n            \"productID\": 1,\n            \"cents\": 3000,\n            \"activeFrom\": \"0001-01-01T00:00:00Z\",\n            \"currency\": \"USD\"\n        },\n        {\n            \"activeTo\": \"4001-01-01T00:00:00Z\",\n            \"active\": true,\n            \"id\": 2,\n            \"productID\": 1,\n            \"cents\": 2631,\n            \"activeFrom\": \"0001-01-01T00:00:00Z\",\n            \"currency\": \"EUR\"\n        },\n        {\n            \"activeTo\": \"4004-12-25T12:00:00Z\",\n            \"active\": true,\n            \"id\": 4,\n            \"productID\": 1,\n            \"cents\": 3000,\n            \"activeFrom\": \"2018-11-08T09:20:06Z\",\n            \"currency\": \"USD\"\n        }\n    ],\n    \"id\": 1,\n    \"sku\": \"358BD17B-67A6-4E02-B1DF-206109C0989F\",\n    \"categories\": [\n        {\n            \"id\": 1,\n            \"isMain\": true,\n            \"subcategories\": [],\n            \"name\": \"food\",\n            \"sort\": 0,\n            \"translations\": []\n        }\n    ],\n    \"attributes\": [\n        {\n            \"language\": \"es\",\n            \"id\": 3,\n            \"value\": \"Bakerism\",\n            \"name\": \"manufacturer\",\n            \"type\": \"string\"\n        }\n    ],\n    \"translations\": [],\n    \"name\": \"Plum Pudding\",\n    \"description\": \"Very plummy\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Product with ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "ˈər(ə)l ɡrā",
+									"description": "The new name for the product.",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "1. Steep for 5 minutes.\n2. Enter another world, through a portal of literature.",
+									"description": "The new description for the product.",
+									"type": "text"
+								},
+								{
+									"key": "status",
+									"value": "2",
+									"description": "The new status for the product.",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/{{product}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"{{product}}"
+							]
+						},
+						"description": "Updates a product model's properties with a given ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete a Product by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/{{product}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"{{product}}"
+							]
+						},
+						"description": "Deletes a product model from the database with a given ID."
+					},
+					"response": []
+				}
+			],
+			"description": "The `Product` model is the base for the Product Manager service. It holds information on an item in the app's catalog such as `sku`, `name`, `description`, and its publish `status`.\n\nA `Product` model connects to all the other models, such as `Price`, `Category`, and `Attribute`.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "bbe246bc-58e6-45c6-8a65-b38d8a129935",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "5b9f1173-6335-442d-97a5-4ee06fd5dd78",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Translations",
+					"item": [
+						{
+							"name": "Create Translation for Category",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "f1d8951c-0dfc-429d-913b-777ebc7c7cd0",
+										"exec": [
+											"pm.test(\"Status code is 200\", function() {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"pm.test(\"Your test name\", function() {",
+											"    var json = pm.response.json();",
+											"    pm.environment.set(\"category_translation\", json.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "name",
+											"value": "Deutsche",
+											"description": "The unique name of the translation",
+											"type": "text"
+										},
+										{
+											"key": "language",
+											"value": "de",
+											"description": "The ISO language code for the translation",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "molkerei",
+											"description": "The translated text for the category",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/categories/{{category}}/translations",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"categories",
+										"{{category}}",
+										"translations"
+									]
+								},
+								"description": "Adds a new `Translation` model to a `Category`."
+							},
+							"response": [
+								{
+									"name": "Create Translation for Category",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/x-www-form-urlencoded",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "name",
+													"value": "Deutsche",
+													"description": "The unique name of the translation",
+													"type": "text"
+												},
+												{
+													"key": "language",
+													"value": "de",
+													"description": "The ISO language code for the translation",
+													"type": "text"
+												},
+												{
+													"key": "description",
+													"value": "molkerei",
+													"description": "The translated text for the category",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/categories/{{category}}/translations",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"categories",
+												"{{category}}",
+												"translations"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "60"
+										},
+										{
+											"key": "date",
+											"value": "Thu, 15 Nov 2018 13:09:42 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"name\": \"Deutsche\",\n    \"description\": \"molkerei\",\n    \"language\": \"de\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Translations for Category",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/categories/{{category}}/translations",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"categories",
+										"{{category}}",
+										"translations"
+									]
+								},
+								"description": "Gets all the `Translation` models connected to a single `Category`."
+							},
+							"response": [
+								{
+									"name": "Get Translations for Category",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/categories/{{category}}/translations",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"categories",
+												"{{category}}",
+												"translations"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "62"
+										},
+										{
+											"key": "date",
+											"value": "Thu, 15 Nov 2018 13:11:50 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "[\n    {\n        \"name\": \"Deutsche\",\n        \"description\": \"molkerei\",\n        \"language\": \"de\"\n    }\n]"
+								}
+							]
+						},
+						{
+							"name": "Get Translation by ID for Category",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/categories/{{category}}/translations/{{category_translation}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"categories",
+										"{{category}}",
+										"translations",
+										"{{category_translation}}"
+									]
+								},
+								"description": "Gets a single `Translation` model by ID that is connected to a `Category`."
+							},
+							"response": [
+								{
+									"name": "Get Translation by ID for Category",
+									"originalRequest": {
+										"method": "GET",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/categories/{{category}}/translations/{{category_translation}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"categories",
+												"{{category}}",
+												"translations",
+												"{{category_translation}}"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "60"
+										},
+										{
+											"key": "date",
+											"value": "Thu, 15 Nov 2018 13:24:02 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"name\": \"Deutsche\",\n    \"description\": \"molkerei\",\n    \"language\": \"de\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Update Translation for Category",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "language",
+											"value": "DE",
+											"description": "The new language code for the translation",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "Molkerei",
+											"description": "The new description text for the tranlsation",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/categories/{{category}}/translations/{{category_translation}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"categories",
+										"{{category}}",
+										"translations",
+										"{{category_translation}}"
+									]
+								},
+								"description": "Updates the `language` and `description` properties of a `Translation` model connected to a `Category`."
+							},
+							"response": [
+								{
+									"name": "Update Translation for Category",
+									"originalRequest": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/x-www-form-urlencoded",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "language",
+													"value": "DE",
+													"description": "The new language code for the translation",
+													"type": "text"
+												},
+												{
+													"key": "description",
+													"value": "Molkerei",
+													"description": "The new description text for the tranlsation",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/categories/{{category}}/translations/{{category_translation}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"categories",
+												"{{category}}",
+												"translations",
+												"{{category_translation}}"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "content-type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "content-length",
+											"value": "60"
+										},
+										{
+											"key": "date",
+											"value": "Thu, 15 Nov 2018 13:38:32 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"name\": \"Deutsche\",\n    \"description\": \"Molkerei\",\n    \"language\": \"DE\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Remove Translation from Category",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt_token}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/categories/{{category}}/translations/{{category_translation}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"categories",
+										"{{category}}",
+										"translations",
+										"{{category_translation}}"
+									]
+								},
+								"description": "Deletes a single `Translation` model that is connected to a `Category`."
+							},
+							"response": [
+								{
+									"name": "Remove Translation from Category",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "http://localhost:8080/v1/products/categories/{{category}}/translations/{{category_translation}}",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "8080",
+											"path": [
+												"v1",
+												"products",
+												"categories",
+												"{{category}}",
+												"translations",
+												"{{category_translation}}"
+											]
+										}
+									},
+									"status": "No Content",
+									"code": 204,
+									"_postman_previewlanguage": "plain",
+									"header": [
+										{
+											"key": "date",
+											"value": "Thu, 15 Nov 2018 13:44:37 GMT"
+										},
+										{
+											"key": "Connection",
+											"value": "keep-alive"
+										}
+									],
+									"cookie": [],
+									"body": null
+								}
+							]
+						}
+					],
+					"description": "A `Translation` model can be used to store a translation of a `Category` model's `name` property in any language.\n\n**Note:** A product's `Translation` model is stored as a child model in `CategoryTranslation` and is not conneted to `ProductTranslation` in any way.",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "72e5bd02-0914-4292-89bf-412d7a33f98a",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "11b582b5-2ea7-4088-b0e0-febf2e21ff75",
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Create Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "61b2db99-55eb-44ff-af48-b747eb7fd1a8",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Set 'category' env var\", function () {",
+									"    var json = pm.response.json();",
+									"    pm.environment.set(\"category\", json.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "dairy",
+									"description": "(required) The name of the category",
+									"type": "text"
+								},
+								{
+									"key": "sort",
+									"value": "10",
+									"description": "(erquired) The location in the list of categories this category will be. The lower the value, the higher up the list the category will be.",
+									"type": "text"
+								},
+								{
+									"key": "isMain",
+									"value": "false",
+									"description": "(required) Whether the category is a top-level category or not. If not, the category will only appear as the sub-category of a different category.",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/categories",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"categories"
+							]
+						},
+						"description": "Creates a new category model."
+					},
+					"response": [
+						{
+							"name": "Create Category",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "name",
+											"value": "dairy",
+											"description": "(required) The name of the category",
+											"type": "text"
+										},
+										{
+											"key": "sort",
+											"value": "10",
+											"description": "(erquired) The location in the list of categories this category will be. The lower the value, the higher up the list the category will be.",
+											"type": "text"
+										},
+										{
+											"key": "isMain",
+											"value": "false",
+											"description": "(required) Whether the category is a top-level category or not. If not, the category will only appear as the sub-category of a different category.",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/categories",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"categories"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "content-length",
+									"value": "85"
+								},
+								{
+									"key": "date",
+									"value": "Mon, 12 Nov 2018 22:07:55 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 5,\n    \"isMain\": false,\n    \"subcategories\": [],\n    \"name\": \"dairy\",\n    \"sort\": 10,\n    \"translations\": []\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/categories",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"categories"
+							]
+						},
+						"description": "Gets all the main category models from the database. Sub-categories only appear in a different category's `subcategories` array."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Category by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/categories/{{category}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"categories",
+								"{{category}}"
+							]
+						},
+						"description": "Gets a single category model (with any subcategories) with a given ID from the database."
+					},
+					"response": [
+						{
+							"name": "Get Category by ID",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/categories/{{category}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"categories",
+										"{{category}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "content-length",
+									"value": "85"
+								},
+								{
+									"key": "date",
+									"value": "Mon, 12 Nov 2018 22:08:20 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 5,\n    \"isMain\": false,\n    \"subcategories\": [],\n    \"name\": \"dairy\",\n    \"sort\": 10,\n    \"translations\": []\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Category by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "Dairy",
+									"description": "The new name for the category",
+									"type": "text"
+								},
+								{
+									"key": "sort",
+									"value": "100",
+									"description": "The new sort index for the category",
+									"type": "text"
+								},
+								{
+									"key": "isMain",
+									"value": "false",
+									"description": "The new positioning flag telling whether the category appears at the top level.",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/categories/{{category}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"categories",
+								"{{category}}"
+							]
+						},
+						"description": "Updatse the properties of category model with a given ID."
+					},
+					"response": [
+						{
+							"name": "Update Category by ID",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "name",
+											"value": "Dairy",
+											"description": "The new name for the category",
+											"type": "text"
+										},
+										{
+											"key": "sort",
+											"value": "100",
+											"description": "The new sort index for the category",
+											"type": "text"
+										},
+										{
+											"key": "isMain",
+											"value": "false",
+											"description": "The new positioning flag telling whether the category appears at the top level.",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/categories/{{category}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"categories",
+										"{{category}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "content-length",
+									"value": "86"
+								},
+								{
+									"key": "date",
+									"value": "Mon, 12 Nov 2018 22:08:28 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 5,\n    \"isMain\": false,\n    \"subcategories\": [],\n    \"name\": \"Dairy\",\n    \"sort\": 100,\n    \"translations\": []\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Category with ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/categories/{{category}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"categories",
+								"{{category}}"
+							]
+						},
+						"description": "Deletes a category model with a given ID. Sub-categories are _not_ deleted."
+					},
+					"response": [
+						{
+							"name": "Delete Category with ID",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/categories/{{category}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"categories",
+										"{{category}}"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "date",
+									"value": "Mon, 12 Nov 2018 22:08:45 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": null
+						}
+					]
+				}
+			],
+			"description": "A `Category` model is used to categorize `Product` models into sections. Some examples you could use are `cloathing`, `food`, `technology`, etc. You can also create sub-categories, so you could have `phone` as a sub-category for technology.\n\nThe `Cloathing` model can be used when displaying products, but it is also used when search for products. You can set multiple categories for the product to be connected to using the query-string array syntax when getting products:\n\n```\ncategories[]=phone&categories[]=computer\n```",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "ce428700-0f5b-4c04-852b-c3a75bafbbf6",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "202c1966-805c-4a61-b6e1-9b65cfcd40e1",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Attributes",
+			"item": [
+				{
+					"name": "Create Attribute",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "87a25234-c323-4f97-ad9d-00b0bcfb6fc2",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Set 'attribute' env var\", function () {",
+									"    var json = pm.response.json();",
+									"    pm.environment.set(\"attribute\", json.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "color",
+									"description": "The name or key of the attribute.",
+									"type": "text"
+								},
+								{
+									"key": "type",
+									"value": "color",
+									"description": "Metadata for the client to dynamically create the UI based on the attribute.",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/attributes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"attributes"
+							]
+						},
+						"description": "Creates a new attribute model."
+					},
+					"response": [
+						{
+							"name": "Create Attribute",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "name",
+											"value": "color",
+											"description": "The name or key of the attribute.",
+											"type": "text"
+										},
+										{
+											"key": "type",
+											"value": "color",
+											"description": "Metadata for the client to dynamically create the UI based on the attribute.",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/attributes",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"attributes"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "content-length",
+									"value": "38"
+								},
+								{
+									"key": "date",
+									"value": "Mon, 12 Nov 2018 22:18:03 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 5,\n    \"name\": \"color\",\n    \"type\": \"color\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Attributes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/attributes",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"attributes"
+							]
+						},
+						"description": "Gets all the attribute models from the database."
+					},
+					"response": [
+						{
+							"name": "Get Attributes",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/attributes",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"attributes"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "content-length",
+									"value": "207"
+								},
+								{
+									"key": "date",
+									"value": "Mon, 12 Nov 2018 22:18:30 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"id\": 1,\n        \"name\": \"size\",\n        \"type\": \"number\"\n    },\n    {\n        \"id\": 2,\n        \"name\": \"color\",\n        \"type\": \"color\"\n    },\n    {\n        \"id\": 3,\n        \"name\": \"manufacturer\",\n        \"type\": \"string\"\n    },\n    {\n        \"id\": 4,\n        \"name\": \"shippable\",\n        \"type\": \"bool\"\n    },\n    {\n        \"id\": 5,\n        \"name\": \"color\",\n        \"type\": \"color\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Attribute by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/attributes/{{attribute}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"attributes",
+								"{{attribute}}"
+							]
+						},
+						"description": "Gets a single attribute model with a given ID."
+					},
+					"response": [
+						{
+							"name": "Get Attribute by ID",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/attributes/{{attribute}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"attributes",
+										"{{attribute}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "content-length",
+									"value": "38"
+								},
+								{
+									"key": "date",
+									"value": "Mon, 12 Nov 2018 22:20:58 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 5,\n    \"name\": \"color\",\n    \"type\": \"color\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Attribute by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "hex_code",
+									"description": "The new name for the attribute",
+									"type": "text"
+								},
+								{
+									"key": "type",
+									"value": "number",
+									"description": "The new type for the attribute",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/attributes/{{attribute}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"attributes",
+								"{{attribute}}"
+							]
+						},
+						"description": "Updates the name and type of the attribute model with a given ID."
+					},
+					"response": [
+						{
+							"name": "Update Attribute by ID",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/x-www-form-urlencoded",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "name",
+											"value": "hex_code",
+											"description": "The new name for the attribute",
+											"type": "text"
+										},
+										{
+											"key": "type",
+											"value": "number",
+											"description": "The new type for the attribute",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/attributes/{{attribute}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"attributes",
+										"{{attribute}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "content-type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "content-length",
+									"value": "42"
+								},
+								{
+									"key": "date",
+									"value": "Tue, 13 Nov 2018 17:10:47 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": 5,\n    \"name\": \"hex_code\",\n    \"type\": \"number\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Attribute by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/attributes/{{attribute}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"attributes",
+								"{{attribute}}"
+							]
+						},
+						"description": "Deletes an attribute model with a given ID from the database."
+					},
+					"response": [
+						{
+							"name": "Delete Attribute by ID",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "http://localhost:8080/v1/products/attributes/{{attribute}}",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"v1",
+										"products",
+										"attributes",
+										"{{attribute}}"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": "plain",
+							"header": [
+								{
+									"key": "date",
+									"value": "Tue, 13 Nov 2018 17:10:59 GMT"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": null
+						}
+					]
+				}
+			],
+			"description": "An `Attribute` model is used to store custom data about a `Product` model. This could be color, size, quality, or anything else you want. The actual `Attribute` model only stores its name and type. The value is in the `ProductAttribute` table because each product could have a different set of values for an `Attribute` with a given name and type.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "87ac96b8-a6e5-4700-bd33-003819c66f96",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "fb3041fd-a5a7-4d95-83ee-c45c60ab17ec",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Get Service Health",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/products/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"products",
+						"health"
+					]
+				},
+				"description": "Used by a load balancer to check that the service is still running."
+			},
+			"response": [
+				{
+					"name": "Get Service Health",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "http://localhost:8080/v1/products/health",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"v1",
+								"products",
+								"health"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "plain",
+					"header": [
+						{
+							"key": "content-type",
+							"value": "text/plain; charset=utf-8"
+						},
+						{
+							"key": "content-length",
+							"value": "9"
+						},
+						{
+							"key": "date",
+							"value": "Fri, 09 Nov 2018 13:45:11 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "All Good!"
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "edcb3333-8dd9-4f10-bd05-3319a333455a",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "4b0cb0d0-7ee2-4b59-9858-fed26ffa9602",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

@@ -37,6 +37,7 @@ extension Product {
     private static func query(for request: Request)throws -> QueryList {
         var structre = QueryStructure()
         
+        try structre.add(structure: self.skuFilter(for: request))
         try structre.add(structure: self.priceFilter(for: request))
         try structre.add(structure: self.categoryFilter(on: request))
         try structre.add(structure: self.attributeFilter(on: request))
@@ -56,6 +57,11 @@ extension Product {
             let query = "SELECT " + Product.table + ".* FROM " + Product.table + " " + serelized.query + ";"
             return ["products": (query, serelized.binds)]
         }
+    }
+    
+    private static func skuFilter(for request: Request)throws -> QueryStructure {
+        guard let sku = try request.query.get(String?.self, at: "sku") else { return QueryStructure() }
+        return QueryStructure(joins: [], filter: [.init(Product.table + ".`sku` = ?", [sku])], having: [])
     }
     
     private static func priceFilter(for request: Request)throws -> QueryStructure {

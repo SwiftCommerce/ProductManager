@@ -152,11 +152,14 @@ extension Product {
         guard let offset = page, let rowCount = pageSize else {
             throw Abort(.badRequest, reason: "Both `page` and `pageSize` values must be passed in for pagination")
         }
-        guard offset > 0 && rowCount > 0 else {
-            throw Abort(.badRequest, reason: "`page` and `pageSize` values must be greater than `0`")
+        guard offset >= 0 else {
+            throw Abort(.badRequest, reason: "`page` value must be equal to, or greater than, `0`")
+        }
+        guard rowCount > 0 else {
+            throw Abort(.badRequest, reason: "`pageSize` value must be greater than `0`")
         }
         
-        return ((offset * rowCount) - (rowCount - 1), rowCount)
+        return ((offset * rowCount), rowCount)
     }
 }
 

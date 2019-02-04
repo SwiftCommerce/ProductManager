@@ -98,7 +98,7 @@ final class Product: ProductModel {
 }
 
 extension Product {
-    static func prepare(on conn: Database.Connection) -> Future<Void> {
+    static func prepare(on conn: MySQLDatabase.Connection) -> Future<Void> {
         return Database.create(Product.self, on: conn) { builder in
             builder.field(for: \.id, isIdentifier: true)
             builder.field(for: \.sku)

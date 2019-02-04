@@ -97,6 +97,21 @@ final class Product: ProductModel {
     }
 }
 
+extension Product {
+    static func prepare(on conn: Database.Connection) -> Future<Void> {
+        return Database.create(Product.self, on: conn) { builder in
+            builder.field(for: \.id, isIdentifier: true)
+            builder.field(for: \.sku)
+            builder.field(for: \.name)
+            builder.field(for: \.description, type: .text)
+            builder.field(for: \.status)
+            builder.field(for: \.createdAt)
+            builder.field(for: \.updatedAt)
+            builder.field(for: \.deletedAt)
+        }
+    }
+}
+
 // MARK: - Public
 
 /// A representation of a product model containing data from connected models.

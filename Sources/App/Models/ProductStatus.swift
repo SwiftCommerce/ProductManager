@@ -1,7 +1,7 @@
-import Vapor
+import FluentMySQL
 
 /// The curremt working status of a product model.
-enum ProductStatus: Int, Codable {
+enum ProductStatus: Int, CaseIterable, MySQLEnumType {
     
     /// The product is a draft and not show to customers.
     case draft

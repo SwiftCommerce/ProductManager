@@ -13,7 +13,8 @@ func databases(config: inout DatabasesConfig, for env: Environment)throws {
         port: 3306,
         username: Environment.get("DATABASE_USER") ?? "root",
         password: Environment.get("DATABASE_PASSWORD") ?? "password",
-        database:  Environment.get("DATABASE_DB") ?? "product_manager"
+        database:  Environment.get("DATABASE_DB") ?? "product_manager",
+        transport: env.isRelease ? .cleartext : .unverifiedTLS
     )
     config.add(database: MySQLDatabase(config: mysql), as: .mysql)
 }

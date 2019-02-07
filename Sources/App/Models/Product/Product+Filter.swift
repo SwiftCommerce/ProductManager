@@ -35,27 +35,30 @@ extension Product {
     }
     
     private static func query(for request: Request)throws -> QueryList {
-        var structre = QueryStructure()
+        var structre = QueryStructure(table: Product.table, selects: [Product.table + ".*"], groups: [Product.table + ".`id`"])
         
         try structre.add(structure: self.skuFilter(for: request))
         try structre.add(structure: self.priceFilter(for: request))
         try structre.add(structure: self.categoryFilter(on: request))
         try structre.add(structure: self.attributeFilter(on: request))
         
+        if let sort = try self.sort(query: &structre, on: request) {
+            structre.order = sort
+        }
+        
         if let pagination = try self.pagination(on: request) {
-            let count = structre.serelize(afterFilter: .init(" GROUP BY " + Product.table + ".`id` ", []))
+            let count = structre.serelize()
             
             structre.limit = pagination
-            let products = structre.serelize(afterFilter: .init(" GROUP BY " + Product.table + ".`id` ", []))
+            let products = structre.serelize()
             
             return [
-                "products": ("SELECT " + Product.table + ".* FROM " + Product.table + " " + products.query + ";", products.binds),
-                "count": ("SELECT " + Product.table + ".* FROM " + Product.table + " " + count.query + ";", count.binds)
+                "products": (products.query + ";", products.binds),
+                "count": (count.query + ";", count.binds)
             ]
         } else {
-            let serelized = structre.serelize(afterFilter: .init(" GROUP BY " + Product.table + ".`id` ", []))
-            let query = "SELECT " + Product.table + ".* FROM " + Product.table + " " + serelized.query + ";"
-            return ["products": (query, serelized.binds)]
+            let serelized = structre.serelize()
+            return ["products": (serelized.query + ";", serelized.binds)]
         }
     }
     
@@ -70,7 +73,7 @@ extension Product {
         var queryData: QueryStructure
         
         if minPrice != nil || maxPrice != nil {
-            queryData = QueryStructure(joins: ["JOIN " + Price.table + " ON " + Price.table + ".`productID` = " + Product.table + ".`id`"])
+            queryData = QueryStructure(joins: [.init(table: Price.table, on: Price.table + ".`productID`", to: Product.table + ".`id`")])
         } else { return QueryStructure() }
         
         if let min = minPrice {
@@ -88,8 +91,8 @@ extension Product {
         
         return QueryStructure(
             joins: [
-                "JOIN " + ProductCategory.table + " ON " + ProductCategory.table + ".`productID` = " + Product.table + ".`id`",
-                "JOIN " + Category.table + " ON " + Category.table + ".`id` = " + ProductCategory.table + ".`categoryID`"
+                .init(table: ProductCategory.table, on: ProductCategory.table + ".`productID`", to: Product.table + ".`id`"),
+                .init(table: Category.table, on: Category.table + ".`id`", to: ProductCategory.table + ".`categoryID`")
             ],
             filter: [
                 .init(Category.table + ".`name` IN (" + Array(repeating: "?", count: categories.count).joined(separator: ", ") + ")", categories)
@@ -106,8 +109,8 @@ extension Product {
         
         return QueryStructure(
             joins: [
-                "JOIN " + ProductAttribute.table + " ON " + ProductAttribute.table + ".`productID` = " + Product.table + ".`id`",
-                "JOIN " + Attribute.table + " ON " + Attribute.table + ".`id` = " + ProductAttribute.table + ".`attributeID`"
+                .init(table: ProductAttribute.table, on: ProductAttribute.table + ".`productID`", to: Product.table + ".`id`"),
+                .init(table: Attribute.table, on: Attribute.table + ".`id`", to: ProductAttribute.table + ".`attributeID`")
             ],
             filter: [
                 .init(ProductAttribute.table + ".`id` IN (" + pivots.query + ")", pivots.binds)
@@ -126,7 +129,7 @@ extension Product {
         
         let structure = QueryStructure(
             joins: [
-                "JOIN " + Attribute.table + " ON " + Attribute.table + ".`id` = " + ProductAttribute.table + ".`attributeID`"
+                .init(table: Attribute.table, on: Attribute.table + ".`id`", to: ProductAttribute.table + ".`attributeID`")
             ],
             filter: [
                 .init(filter.query.joined(separator: " OR "), filter.binds)
@@ -161,6 +164,52 @@ extension Product {
         
         return ((offset * rowCount), rowCount)
     }
+    
+    private static func sort(
+        query: inout QueryStructure,
+        on request: Request
+    )throws -> (property: QueryStructure.OrderValue, direction: MySQLDirection)? {
+        let direction = try request.query.get(String?.self, at: "sortDirection")
+        let property = try request.query.get(String?.self, at: "sortBy")
+        
+        if direction == nil && property == nil {
+            return nil
+        }
+        
+        let mysqlDirection: MySQLDirection
+        switch direction?.lowercased() {
+        case "asc", "ascending": mysqlDirection = .ascending
+        case "desc", "descending": mysqlDirection = .descending
+        default: throw Abort(.badRequest, reason: "No valid `sortDirection` value. Expected `asc`, `ascending`, `desc`, `descending`.")
+        }
+        
+        let mysqlProperty: String
+        switch property?.lowercased() {
+        case "name": mysqlProperty = Product.table + ".`name`"
+        case "price":
+            mysqlProperty = Price.table + ".`cents`"
+            
+            query.selects.append(mysqlProperty)
+            query.groups.append(mysqlProperty)
+            if !query.joins.contains(where: { $0.table == Price.table }) {
+                query.joins.append(.init(table: Price.table, on: Price.table + ".`productID`", to: Product.table + ".`id`"))
+            }
+        case "category":
+            mysqlProperty = Category.table + ".`name`"
+            
+            query.selects.append(mysqlProperty)
+            query.groups.append(mysqlProperty)
+            if !query.joins.contains(where: { $0.table == Category.table }) {
+                query.joins.append(contentsOf: [
+                    .init(table: ProductCategory.table, on: ProductCategory.table + ".`productID`", to: Product.table + ".`id`"),
+                    .init(table: Category.table, on: Category.table + ".`id`", to: ProductCategory.table + ".`categoryID`")
+                ])
+            }
+        default: throw Abort(.badRequest, reason: "No valid `sortBy` value. Expected `price`, `name`, `category`.")
+        }
+        
+        return (.property(mysqlProperty), mysqlDirection)
+    }
 }
 
 extension Model {
@@ -170,15 +219,30 @@ extension Model {
 }
 
 struct QueryStructure {
-    var joins: [String]
+    var table: String?
+    var selects: [String]
+    var joins: [Join]
     var filter: [Query]
+    var groups: [String]
     var having: [Query]
+    var order: (property: OrderValue, direction: MySQLDirection)?
     var limit: (offset: Int, rowCount: Int)?
     
-    init(joins: [String] = [], filter: [Query] = [], having: [Query] = []) {
+    init(
+        table: String? = nil,
+        selects: [String] = [],
+        joins: [Join] = [],
+        filter: [Query] = [],
+        groups: [String] = [],
+        having: [Query] = []
+    ) {
+        self.table = table
+        self.selects = selects
         self.joins = joins
         self.filter = filter
+        self.groups = groups
         self.having = having
+        self.order = nil
         self.limit = nil
     }
     
@@ -186,12 +250,19 @@ struct QueryStructure {
         var query = ""
         var binds: [Encodable] = []
         
+        if let table = self.table, self.selects.count > 0 {
+            query.append("SELECT " + self.selects.joined(separator: ", ") + " FROM " + table + " ")
+        }
         if self.joins.count > 0 {
-            query.append(self.joins.joined(separator: " ") + " ")
+            let joins = self.joins.map { return "JOIN " + $0.table + " ON " + $0.base + " = " + $0.relative }
+            query.append(joins.joined(separator: " ") + " ")
         }
         if self.filter.count > 0 {
             query.append("WHERE " + self.filter.map { $0.query }.joined(separator: " AND ") + " ")
             binds.append(contentsOf: self.filter.flatMap { $0.binds })
+        }
+        if self.groups.count > 0 {
+            query.append(" GROUP BY " + self.groups.joined(separator: ", ") + " ")
         }
         if let inter = intermediate {
             query.append(inter.query)
@@ -201,8 +272,17 @@ struct QueryStructure {
             query.append(contentsOf: " HAVING " + self.having.map { $0.query }.joined(separator: " AND "))
             binds.append(contentsOf: self.having.flatMap { $0.binds })
         }
+        if let order = self.order {
+            switch order.property {
+            case let .property(prop): query.append(" ORDER BY " + prop + " ")
+            case let .location(string, property):
+                query.append(" ORDER BY LOCATE (?, " + property + ") ")
+                binds.append(string)
+            }
+            query.append(order.direction.serialize(&binds))
+        }
         if let limit = self.limit {
-            query.append(contentsOf: " LIMIT ?, ?")
+            query.append(" LIMIT ?, ?")
             binds.append(contentsOf: [limit.offset, limit.rowCount])
         }
         
@@ -210,8 +290,10 @@ struct QueryStructure {
     }
     
     mutating func add(structure: QueryStructure) {
+        self.selects.append(contentsOf: structure.selects)
         self.joins.append(contentsOf: structure.joins)
         self.filter.append(contentsOf: structure.filter)
+        self.groups.append(contentsOf: structure.groups)
         self.having.append(contentsOf: structure.having)
     }
     
@@ -223,5 +305,22 @@ struct QueryStructure {
             self.query = query
             self.binds = binds
         }
+    }
+    
+    struct Join {
+        var table: String
+        var base: String
+        var relative: String
+        
+        init(table: String, on base: String, to relative: String) {
+            self.table = table
+            self.base = base
+            self.relative = relative
+        }
+    }
+    
+    enum OrderValue {
+        case property(String)
+        case location(string: String, property: String)
     }
 }

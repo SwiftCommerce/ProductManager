@@ -2,189 +2,325 @@ import FluentMySQL
 import Foundation
 import FluentSQL
 import Vapor
-/*
-extension QueryBuilder where Model == Product, Result == Product {
-    
-    /// Gets all `Product` models from the database,
-    /// filtering them based on the query-strings from a request.
-    ///
-    /// If there are no query-strings, all the models will be returned.
-    ///
-    /// Valid query-strings and what they do are the following:
-    /// - `minPrice` (`Float`): Restricts results to `Product` moedls that are conected to
-    ///   a `Price` model who's `.price` value is equal to, or more than, the value.
-    /// - `maxPrice` (`Float`): Restricts results to `Product` moedls that are conected to
-    ///   a `Price` model who's `.price` value is equal to, or less than, the value.
-    /// - `filter` (`[String: String]`): Restricts results to `Product` models that are connected
-    ///   to `Attribute` models with the `name` equal to `key` and `value` equal to `value`.
-    /// - `categories` (`[String]`): Restricts results to Product` models that are connected to
-    ///   `Category` models with `name` values equal the the array elements.
-    /// - `status` (`Int`): Restricts results to models with a `status` property who's `rawValue` is
-    ///   equal to the query value.
-    ///
-    /// - Parameter request: The request to get the query-strings and database connection from.
-    ///
-    /// - Throws: Errors that occur when creating database queries.
-    /// - Returns: All the `Product` model that match the query-strings from the request.
-    func filter(on request: Request)throws -> Future<QueryBuilder<Product, Product>> {
-        
-        // Get valid IDs for the `Product` models we fetch.
-        let productIDs = try [
-            idsConstrainedWithPrice(with: request),
-            idsConstrainedWithAttributes(with: request),
-            idsConstrainedWithCategories(with: request)
-        ].flatten(on: request)
-        
-        let cleanedIDs = productIDs.map(to: [Product.ID]?.self) { ids in
+
+typealias QueryList = [String: (sql: String, bindings: [Encodable])]
+struct SearchResult: Content {
+    let products: [ProductResponseBody]
+    let count: Int
+}
+
+extension Product {
+    static func search(on request: Request) -> Future<SearchResult> {
+        do {
+            let list = try self.query(for: request)
+            guard let productQuery = list["products"] else {
+                throw Abort(.internalServerError, reason: "Missing query for product search")
+            }
+            let countQuery = list["count"] ?? productQuery
             
-            // Verify not all arrays are `nil`.
-            guard ids.compactMap({ $0 }).count > 0 else { return nil }
-            
-            // Get values to only occur in all arrays passed in.
-            let cleanedIDs: [Product.ID] = ids.compactMap { $0 }.reduce(into: []) { (result, ids) in
-                
-                // Set the inital array to the base result.
-                if result == [] { result = ids; return }
-                
-                // If a value in the result is not in another array
-                // it does not exist in all the arrays and should be removed.
-                // Complexity: `O(n*m^2)`
-                result.forEach { id in
-                    if !ids.contains(id) {
-                        let index = result.index(of: id)!
-                        result.remove(at: index)
-                    }
-                }
+            let products = request.withPooledConnection(to: .mysql) { conn -> Future<[ProductResponseBody]> in
+                let products = conn.raw(productQuery.sql).binds(productQuery.bindings).all(decoding: Product.self)
+                return products.flatMap { products in products.map { Promise(product: $0, on: request).futureResult }.flatten(on: request) }
+            }
+            let count = request.withPooledConnection(to: .mysql) { conn in
+                return conn.raw(countQuery.sql).binds(countQuery.bindings).all(decoding: Product.self)
             }
             
-            // Remove duplicate values.
-            return Array(Set(cleanedIDs))
-        }
-        
-        // Construct base query for getting `Product` models.
-        return cleanedIDs.map(to: QueryBuilder<Product, Product>.self) { validIDs in
-            
-            if let ids = validIDs {
-                try self.filter(\.id ~~ ids)
+            return map(products, count) { products, count in
+                return SearchResult(products: products, count: count.count)
             }
-            if let status = try request.query.get(ProductStatus?.self, at: "status") {
-                try self.filter(\.status == status)
-            }
-            
-            // If query parameters where passed in for pagination, limit the amount of models we fetch.
-            if let page = try request.query.get(Int?.self, at: "page"), let results = try request.query.get(Int?.self, at: "results_per_page") {
-                
-                // Get all the models in the range specified by the query parameters passed in.
-                return self.range(lower: (results * page) - results, upper: (results * page))
-            } else {
-                
-                // Run the query to fetch all the rows from the `products` database table.
-                return self
-            }
+        } catch let error {
+            return request.future(error: error)
         }
     }
     
-    private func idsConstrainedWithPrice(with request: Request)throws -> Future<[Product.ID]?> {
+    private static func query(for request: Request)throws -> QueryList {
+        var structre = QueryStructure(table: Product.table, selects: [Product.table + ".*"], groups: [Product.table + ".`id`"])
         
-        // Setup base query, along with logical constrainst and paramaters storage.
-        let priceQuery = "SELECT * FROM `\(Price.entity)` INNER JOIN `\(ProductPrice.entity)` ON `\(ProductPrice.entity)`.`priceID` = `\(Price.entity)`.`id`"
-        var constraints: [String] = []
-        var paramaters: [MySQLDataConvertible] = []
-        var priceConstraints: Int = 0
+        try structre.add(structure: self.skuFilter(for: request))
+        try structre.add(structure: self.priceFilter(for: request))
+        try structre.add(structure: self.categoryFilter(on: request))
+        try structre.add(structure: self.attributeFilter(on: request))
         
-        // See if a `minPrice` query was passed in. If so,
-        // update the query data stores and logival checks.
-        if let min = try request.query.get(Int?.self, at: "minPrice") {
-            constraints.append("`\(Price.entity)`.`cents` >= ?")
-            paramaters.append(min)
-            priceConstraints += 1
+        if let sort = try self.sort(query: &structre, on: request) {
+            structre.order = sort
         }
         
-        if let max = try request.query.get(Int?.self, at: "maxPrice") {
-            constraints.append("`\(Price.entity)`.`cents` <= ?")
-            paramaters.append(max)
-            priceConstraints += 1
-        }
-        
-        // If no price constraints where passed in, return nil.
-        // This will not restrict the `Propduct` models that are fetched.
-        if priceConstraints < 1 { return Future.map(on: request) { nil } }
-        
-        // Construct the full query, then run it, passing in the query paramaters.
-        return ProductID.raw(priceQuery + " WHERE " + constraints.joined(separator: " AND "), with: paramaters, on: request).map(to: [Product.ID]?.self) { pivots in
-            return pivots.map { $0.productID }
-        }
-    }
-    
-    private func idsConstrainedWithAttributes(with request: Request)throws -> Future<[Product.ID]?> {
-        let futureAttributes: Future<[ProductID]>
-        let filterCount: Int
-        
-        if let attributes = try request.query.get([String: String]?.self, at: "filter") {
+        if let pagination = try self.pagination(on: request) {
+            let count = structre.serelize()
             
-            // `OR` query groups are broken in Fluent 3, so we create and run a raw query.
-            var attributeQuery = "SELECT * FROM `\(Attribute.entity)` INNER JOIN `\(ProductAttribute.entity)` ON `\(ProductAttribute.entity)`.attributeID = `\(Attribute.entity)`.id"
-            var paraneters: [MySQLDataConvertible] = []
+            structre.limit = pagination
+            let products = structre.serelize()
             
-            let whereClause = attributes.map { attribute in
-                paraneters.append(attribute.key)
-                paraneters.append(attribute.value)
-                
-                // The querstion-marks are placeholders in the query.
-                // They are replaced with the `parameters` values passed into the `.raw` method.
-                return "(`\(Attribute.entity)`.`name` = ? AND `\(ProductAttribute.entity)`.`value` = ?)"
-                }.joined(separator: " OR ")
-            attributeQuery += " WHERE \(whereClause)"
-            
-            futureAttributes = ProductID.raw(attributeQuery, with: paraneters, on: request)
-            filterCount = attributes.count
+            return [
+                "products": (products.query + ";", products.binds),
+                "count": (count.query + ";", count.binds)
+            ]
         } else {
-            return Future.map(on: request) { nil }
-        }
-        
-        return futureAttributes.map(to: [Product.ID]?.self) { (pivots) in
-            
-            // 1. Create a dictionary, where the `productID` is the key
-            //    and the pivots that have an equal `productID` value
-            //    are the elements of the array value.
-            // 2. Get all the key/value pairs where the length of the array
-            //    value is equal to the amount of attribute filters in the query-string
-            // 3. Get the keys of the key/value pairs that made it through the filter.
-            //    These are the IDs of the products that match the filter.
-            let keys = pivots.group(by: \.productID).filter { _, pivots in
-                return pivots.count == filterCount
-            }.keys
-            return Array(keys)
+            let serelized = structre.serelize()
+            return ["products": (serelized.query + ";", serelized.binds)]
         }
     }
     
-    private func idsConstrainedWithCategories(with request: Request)throws -> Future<[Product.ID]?> {
-        let futureCategories: Future<[ProductID]>
-        let categoryCount: Int
+    private static func skuFilter(for request: Request)throws -> QueryStructure {
+        guard let sku = try request.query.get(String?.self, at: "sku") else { return QueryStructure() }
+        return QueryStructure(joins: [], filter: [.init(Product.table + ".`sku` = ?", [sku])], having: [])
+    }
+    
+    private static func priceFilter(for request: Request)throws -> QueryStructure {
+        let minPrice = try request.query.get(Int?.self, at: "minPrice")
+        let maxPrice = try request.query.get(Int?.self, at: "maxPrice")
+        var queryData: QueryStructure
         
-        if let categories = try request.query.get([String]?.self, at: "categories") {
-            let categoriesQuery = "SELECT * FROM `\(Category.entity)` INNER JOIN `\(ProductCategory.entity)` ON `\(ProductCategory.entity)`.`categoryID` = `\(Category.entity)`.`id`"
-            let parameters: [MySQLDataConvertible] = categories
-            let whereCaluse = Array(repeating: "`\(Category.entity)`.`name` = ?", count: categories.count).joined(separator: " OR ")
-            let query = categoriesQuery + " WHERE " + whereCaluse
+        if minPrice != nil || maxPrice != nil {
+            queryData = QueryStructure(joins: [.init(table: Price.table, on: Price.table + ".`productID`", to: Product.table + ".`id`")])
+        } else { return QueryStructure() }
+        
+        if let min = minPrice {
+            queryData.filter.append(.init(Price.table + ".`cents` >= ?", [min]))
+        }
+        if let max = maxPrice {
+            queryData.filter.append(.init(Price.table + ".`cents` <= ?", [max]))
+        }
+        
+        return queryData
+    }
+    
+    private static func categoryFilter(on request: Request)throws -> QueryStructure {
+        guard let categories = try request.query.get([String]?.self, at: "categories") else { return QueryStructure() }
+        
+        return QueryStructure(
+            joins: [
+                .init(table: ProductCategory.table, on: ProductCategory.table + ".`productID`", to: Product.table + ".`id`"),
+                .init(table: Category.table, on: Category.table + ".`id`", to: ProductCategory.table + ".`categoryID`")
+            ],
+            filter: [
+                .init(Category.table + ".`name` IN (" + Array(repeating: "?", count: categories.count).joined(separator: ", ") + ")", categories)
+            ],
+            having: [
+                .init("COUNT(DISTINCT " + Category.table + ".`name`) = ?", [categories.count])
+            ]
+        )
+    }
+    
+    private static func attributeFilter(on request: Request)throws -> QueryStructure {
+        guard let attributes = try request.query.get([String: String]?.self, at: "attributes") else { return QueryStructure() }
+        let pivots = self.productAttributes(attributes: attributes)
+        
+        return QueryStructure(
+            joins: [
+                .init(table: ProductAttribute.table, on: ProductAttribute.table + ".`productID`", to: Product.table + ".`id`"),
+                .init(table: Attribute.table, on: Attribute.table + ".`id`", to: ProductAttribute.table + ".`attributeID`")
+            ],
+            filter: [
+                .init(ProductAttribute.table + ".`id` IN (" + pivots.query + ")", pivots.binds)
+            ],
+            having: [
+                .init("COUNT(DISTINCT " + ProductAttribute.table + ".`id`) = ?", [attributes.count])
+            ]
+        )
+    }
+    
+    private static func productAttributes(attributes: [String: String]) -> (query: String, binds: [Encodable]) {
+        let filter: (query: [String], binds: [Encodable]) = attributes.reduce(into: (query: [], binds: [])) { result, attribute in
+            result.query.append("(" + Attribute.table + ".`name` = ? AND " + ProductAttribute.table + ".`value` = ?)")
+            result.binds.append(contentsOf: [attribute.key, attribute.value])
+        }
+        
+        let structure = QueryStructure(
+            joins: [
+                .init(table: Attribute.table, on: Attribute.table + ".`id`", to: ProductAttribute.table + ".`attributeID`")
+            ],
+            filter: [
+                .init(filter.query.joined(separator: " OR "), filter.binds)
+            ]
+        )
+        let serelized = structure.serelize()
+        let query =
+            "SELECT " + ProductAttribute.table + ".`id` FROM " + ProductAttribute.table +
+            " " + serelized.query +
+            " GROUP BY " + ProductAttribute.table + ".`id`"
+        
+        return (query, serelized.binds)
+    }
+    
+    private static func pagination(on request: Request)throws -> (offset: Int, rowCount: Int)? {
+        let page = try request.query.get(Int?.self, at: "page")
+        let pageSize = try request.query.get(Int?.self, at: "pageSize")
+        
+        if page == nil && pageSize == nil {
+            return nil
+        }
+        
+        guard let offset = page, let rowCount = pageSize else {
+            throw Abort(.badRequest, reason: "Both `page` and `pageSize` values must be passed in for pagination")
+        }
+        guard offset >= 0 else {
+            throw Abort(.badRequest, reason: "`page` value must be equal to, or greater than, `0`")
+        }
+        guard rowCount > 0 else {
+            throw Abort(.badRequest, reason: "`pageSize` value must be greater than `0`")
+        }
+        
+        return ((offset * rowCount), rowCount)
+    }
+    
+    private static func sort(
+        query: inout QueryStructure,
+        on request: Request
+    )throws -> (property: QueryStructure.OrderValue, direction: MySQLDirection)? {
+        let direction = try request.query.get(String?.self, at: "sortDirection")
+        let property = try request.query.get(String?.self, at: "sortBy")
+        
+        if direction == nil && property == nil {
+            return nil
+        }
+        
+        let mysqlDirection: MySQLDirection
+        switch direction?.lowercased() {
+        case "asc", "ascending": mysqlDirection = .ascending
+        case "desc", "descending": mysqlDirection = .descending
+        default: throw Abort(.badRequest, reason: "No valid `sortDirection` value. Expected `asc`, `ascending`, `desc`, `descending`.")
+        }
+        
+        let mysqlProperty: String
+        switch property?.lowercased() {
+        case "name": mysqlProperty = Product.table + ".`name`"
+        case "price":
+            mysqlProperty = Price.table + ".`cents`"
             
-            futureCategories = ProductID.raw(query, with: parameters, on: request)
-            categoryCount = categories.count
-        } else {
-            return Future.map(on: request) { nil }
+            query.selects.append(mysqlProperty)
+            query.groups.append(mysqlProperty)
+            if !query.joins.contains(where: { $0.table == Price.table }) {
+                query.joins.append(.init(table: Price.table, on: Price.table + ".`productID`", to: Product.table + ".`id`"))
+            }
+        case "category":
+            mysqlProperty = Category.table + ".`name`"
+            
+            query.selects.append(mysqlProperty)
+            query.groups.append(mysqlProperty)
+            if !query.joins.contains(where: { $0.table == Category.table }) {
+                query.joins.append(contentsOf: [
+                    .init(table: ProductCategory.table, on: ProductCategory.table + ".`productID`", to: Product.table + ".`id`"),
+                    .init(table: Category.table, on: Category.table + ".`id`", to: ProductCategory.table + ".`categoryID`")
+                ])
+            }
+        default: throw Abort(.badRequest, reason: "No valid `sortBy` value. Expected `price`, `name`, `category`.")
         }
         
-        return futureCategories.map(to: [Product.ID]?.self) { pivots in
-            let keys = pivots.group(by: \.productID).filter { _, pivots in
-                return pivots.count == categoryCount
-            }.keys
-            return Array(keys)
-        }
+        return (.property(mysqlProperty), mysqlDirection)
     }
 }
 
-struct ProductID: MySQLModel {
-    var id: Int?
-    let productID: Product.ID
+extension Model {
+    static var table: String {
+        return "`" + self.entity + "`"
+    }
 }
-*/
+
+struct QueryStructure {
+    var table: String?
+    var selects: [String]
+    var joins: [Join]
+    var filter: [Query]
+    var groups: [String]
+    var having: [Query]
+    var order: (property: OrderValue, direction: MySQLDirection)?
+    var limit: (offset: Int, rowCount: Int)?
+    
+    init(
+        table: String? = nil,
+        selects: [String] = [],
+        joins: [Join] = [],
+        filter: [Query] = [],
+        groups: [String] = [],
+        having: [Query] = []
+    ) {
+        self.table = table
+        self.selects = selects
+        self.joins = joins
+        self.filter = filter
+        self.groups = groups
+        self.having = having
+        self.order = nil
+        self.limit = nil
+    }
+    
+    func serelize(afterFilter intermediate: Query? = nil) -> (query: String, binds: [Encodable]) {
+        var query = ""
+        var binds: [Encodable] = []
+        
+        if let table = self.table, self.selects.count > 0 {
+            query.append("SELECT " + self.selects.joined(separator: ", ") + " FROM " + table + " ")
+        }
+        if self.joins.count > 0 {
+            let joins = self.joins.map { return "JOIN " + $0.table + " ON " + $0.base + " = " + $0.relative }
+            query.append(joins.joined(separator: " ") + " ")
+        }
+        if self.filter.count > 0 {
+            query.append("WHERE " + self.filter.map { $0.query }.joined(separator: " AND ") + " ")
+            binds.append(contentsOf: self.filter.flatMap { $0.binds })
+        }
+        if self.groups.count > 0 {
+            query.append(" GROUP BY " + self.groups.joined(separator: ", ") + " ")
+        }
+        if let inter = intermediate {
+            query.append(inter.query)
+            binds.append(contentsOf: inter.binds)
+        }
+        if self.having.count > 0 {
+            query.append(contentsOf: " HAVING " + self.having.map { $0.query }.joined(separator: " AND "))
+            binds.append(contentsOf: self.having.flatMap { $0.binds })
+        }
+        if let order = self.order {
+            switch order.property {
+            case let .property(prop): query.append(" ORDER BY " + prop + " ")
+            case let .location(string, property):
+                query.append(" ORDER BY LOCATE (?, " + property + ") ")
+                binds.append(string)
+            }
+            query.append(order.direction.serialize(&binds))
+        }
+        if let limit = self.limit {
+            query.append(" LIMIT ?, ?")
+            binds.append(contentsOf: [limit.offset, limit.rowCount])
+        }
+        
+        return (query, binds)
+    }
+    
+    mutating func add(structure: QueryStructure) {
+        self.selects.append(contentsOf: structure.selects)
+        self.joins.append(contentsOf: structure.joins)
+        self.filter.append(contentsOf: structure.filter)
+        self.groups.append(contentsOf: structure.groups)
+        self.having.append(contentsOf: structure.having)
+    }
+    
+    struct Query {
+        var query: String
+        var binds: [Encodable]
+        
+        init(_ query: String, _ binds: [Encodable]) {
+            self.query = query
+            self.binds = binds
+        }
+    }
+    
+    struct Join {
+        var table: String
+        var base: String
+        var relative: String
+        
+        init(table: String, on base: String, to relative: String) {
+            self.table = table
+            self.base = base
+            self.relative = relative
+        }
+    }
+    
+    enum OrderValue {
+        case property(String)
+        case location(string: String, property: String)
+    }
+}

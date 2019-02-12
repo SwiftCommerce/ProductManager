@@ -4,6 +4,7 @@ import Fluent
 
 /// A controller for all API endpoints that make operations on a product's attributes.
 final class ProductAttributesController: RouteCollection {
+    typealias Pivot = ProductAttribute
     
     /// Required by the `RouteCollection` protocol.
     /// Allows you to run this to add your routes to a router:
@@ -14,11 +15,11 @@ final class ProductAttributesController: RouteCollection {
     func boot(router: Router) throws {
         
         // Create a router group, because all routes in this controller have the same parent path.
-        let attributes = router.grouped("products", Product.parameter, "attributes")
+        let attributes = router.grouped(Product.parameter, "attributes")
         
         // Registers a POST endpont at `products/:product/attributes`.
         // This route automaticly decodes the request's body to an `Attribute` model.
-        attributes.post(AttributeContent.self, use: create)
+        attributes.post(AttributeConnection.self, use: create)
         
         // Registers a GET endpont at `products/:product/attributes`.
         attributes.get(use: index)
@@ -27,10 +28,7 @@ final class ProductAttributesController: RouteCollection {
         attributes.get(Attribute.parameter, use: show)
         
         // Register a PATCH endpoint at `/products/:product/attributes/:int`.
-        attributes.patch(Int.parameter, use: update)
-        
-        // Register a PATCH endpoint at `/products/:product/attributes/attach/:attribute`.
-        attributes.patch("attach", Attribute.parameter, use: attach)
+        attributes.patch(AttributeUpdateContent.self, at: Attribute.parameter, use: update)
         
         // Register a DELETE endpoint at `/prodcuts/:prodcut/attributes/:attributes`.
         attributes.delete(Attribute.parameter, use: delete)
@@ -38,117 +36,91 @@ final class ProductAttributesController: RouteCollection {
     
     /// Creates a new `Attribute` model from a request and saves it to the database.
     /// This route handler requires the router to decode the request's body to an `Attribute` and pass the model in with the request.
-    func create(_ request: Request, _ content: AttributeContent)throws -> Future<AttributeContent> {
+    func create(_ request: Request, _ content: AttributeConnection)throws -> Future<AttributeContent> {
         
-        // Get the `Product` model from the route parameters.
-        let parent = try request.parameters.next(Product.self)
+        // Get the product the attribute will be connected to.
+        let product = try request.parameters.id(for: Product.self)
         
-        // Get the amount of attributes that already exist in the database with the name of the new attribute.
-        let attributeCount = parent.flatMap(to: Int.self) { (product) in
-            return try product.attributes.query(on: request).filter(\.name == content.name).count()
-        }
+        // Get the attribute to connect to the product from the `attributeID` key.
+        let attribute = Attribute.find(content.attributeID, on: request).unwrap(or: Abort(.badRequest, reason: "No attribute for ID in body"))
         
-        let attribute = flatMap(to: Attribute.self, attributeCount, parent) { (attributeCount, parent) in
-            
-            // Verify that there are less then one (0 or fewer) attributes already in the database with the name passed in.
-            guard attributeCount < 1 else {
-                throw Abort(.badRequest, reason: "Attribute already exists for product with name '\(content.name)'")
-            }
-            
-            // Create the new attribute, Save it to the database, and return it from the route.
-            return Attribute(name: content.name, type: content.type).save(on: request)
-        }
+        // Create the `ProductAttribute` pivot to connect the attribute to the product.
+        let pivot = ProductAttribute(content, product: product).save(on: request)
         
-        // Create a pivot between the parent product and the attribute, then return the attribute.
-        return Async.flatMap(to: AttributeContent.self, attribute, parent) { attribute, product in
-            let pivot = try ProductAttribute(value: content.value, language: content.language, product: product, attribute: attribute)
-            let content = AttributeContent(attribute: attribute, pivot: pivot)
-            return pivot.save(on: request).transform(to: content)
-        }
+        // Create a user-firendly response from the attribute and pivot and return it.
+        return map(attribute, pivot, AttributeContent.init)
     }
     
     /// Fetches all the `Attribute` models connected to a `Product`.
     func index(_ request: Request)throws -> Future<[AttributeContent]> {
         
-        // Get the `Product` model from the route path, get all of the `Attribute` models connected to it, and return them.
-        return try request.parameters.next(Product.self).flatMap(to: [AttributeContent].self, { try $0.attributes.response(on: request) })
+        // The `productID` value of all the `ProductAttribute` pivots to get.
+        let product = try request.parameters.id(for: Product.self)
+        
+        // Get all the `ProductAttribute` and connected `Attribute` models that have the `Product` ID from the reset paramaters.
+        let productID = \Pivot.productID
+        let attributeID = \Pivot.attributeID
+        let attributes = Attribute.query(on: request).join(attributeID, to: \Attribute.id).filter(productID == product).alsoDecode(Pivot.self).all()
+
+        // Convert each `Attribute`/`ProductAttribute` pair into an `AttributeContent` instance.
+        return attributes.map { attributes in attributes.map(AttributeContent.init) }
     }
     
     /// Get an `Attribute` connected to a `Product` with a specified ID.
     func show(_ request: Request)throws -> Future<AttributeContent> {
         
-        // Get the `Int` parameter from the request's path.
-        let id = try request.parameters.next(Int.self)
+        // Get the specified `Product` model from the request's route parameters.
+        let productID = try request.parameters.id(for: Product.self)
         
-        // Get the `Product` model specified in the route path.
-        return try request.parameters.next(Product.self).flatMap(to: [AttributeContent].self) { (product) in
-            
-            // Get the first attribute with the `Int` parameter as it's ID from all attributes connected to the product.
-            return try product.attributes.response(on: request, pivotQuery: ProductAttribute.query(on: request).filter(\.attributeID == id))
-            
-            // Gets the first element of the array (there should only be one or zero elements) and unwrap it.
-        }.map(to: AttributeContent?.self, { $0.first }).unwrap(or: Abort(.notFound, reason: "No attribute connected to product with ID '\(id)'"))
+        // Get the ID of the attribute to update.
+        let attributeID = try request.parameters.id(for: Attribute.self)
+        
+        // Get the `ProductAttribute` and `Attribute` models required to create a `AttributeContent` instance.
+        let pivot = ProductAttribute.query(on: request).filter(\.productID == productID).filter(\.attributeID == attributeID).first()
+        let attribute = Attribute.query(on: request).filter(\.id == attributeID).first()
+        
+        // Convert the pivot and attribute models to an `AttributeContent` instance if they both exist.
+        let error = Abort(.notFound)
+        return map(attribute.unwrap(or: error), pivot.unwrap(or: error), AttributeContent.init)
     }
     
     /// Updates an attribute's value.
-    func update(_ request: Request)throws -> Future<AttributeContent> {
+    func update(_ request: Request, content: AttributeUpdateContent)throws -> Future<AttributeContent> {
         
         // Get the specified `Product` model from the request's route parameters.
-        let product = try request.parameters.next(Product.self)
+        let product = try request.parameters.id(for: Product.self)
         
         // Get the ID of the attribute to update.
-        let id:Int = try request.parameters.next(Int.self)
+        let id = try request.parameters.id(for: Attribute.self)
         
-        // Get the new value fore the for the `Attribute` model.
-        let newValue = request.content.get(String.self, at: "value")
+        // Update the pivot's `value` property if a new value was passed into the request body.
+        // Otherwise, just get the pivot.
+        let query = ProductAttribute.query(on: request).filter(\.productID == product).filter(\.attributeID == id)
+        let update = content.value == nil ? request.future() : query.update(\.value, to: content.value!).run()
+        let pivot = update.flatMap(query.first)
         
-        // Return the result of the `flatMap` completion handler, which is fired after the two futures passed in have complete.
-        return flatMap(to: Product.self, product, newValue, { (product, newValue) in
-            
-            // Find the attribute connected to the product with the ID passed in, update its `value` property, and return the product.
-            let idKeyPath:KeyPath = \Attribute.id // the compiler is stupid and doesn't automatically recognize it as a key path
-            return try product.attributes.query(on: request).filter(idKeyPath == id).update(\Attribute.type, to: newValue).all().transform(to: product)
-        }).flatMap(to: [AttributeContent].self, { product in
-            
-            // `QueryBuilder.update` returns `Future<Void>`, so to get the updated attribute, we need to run another query.
-            return try product.attributes.response(on: request, pivotQuery: ProductAttribute.query(on: request).filter(\.attributeID == id))
-            
-            // Gets the first element of the array (there should only be one or zero elements) and unwrap it.
-        }).map(to: AttributeContent?.self, { $0.first }).unwrap(or: Abort(.notFound, reason: "No attribute connected to product with ID '\(id)'"))
-    }
-    
-    /// Attaches an `Attribute` model to a `Product` model
-    /// through a `ProductAttribute` pivot.
-    func attach(_ request: Request)throws -> Future<AttributeContent> {
+        // Get the attribute that has the ID passed in and is connected to the product ID passed in.
+        let productID = \ProductAttribute.productID
+        let attributeID = \ProductAttribute.attributeID
+        let attribute = Attribute.query(on: request).join(attributeID, to: \Attribute.id).filter(\.id == id).filter(productID == product).first()
         
-        // Get the models to attach from the request paramaters/
-        let product = try request.parameters.next(Product.self)
-        let attribute = try request.parameters.next(Attribute.self)
-        
-        // Get the pivot metadata from the request body.
-        let value = try request.content.syncGet(String.self, at: "value")
-        let language = try request.content.syncGet(String.self, at: "language")
-        
-        return Async.flatMap(to: (ProductAttribute, Attribute).self, product, attribute) { product, attribute -> Future<(ProductAttribute, Attribute)> in
-            
-            // Connect the two models through a `ProductAttribute` pivot.
-            return try ProductAttribute(value: value, language: language, product: product, attribute: attribute).save(on: request).and(result: attribute)
-        }.map(to: AttributeContent.self) { contentData in
-            
-            // Convert the `Attribute` model and pivot to an `AttributeContent` instance.
-            return AttributeContent(attribute: contentData.1, pivot: contentData.0)
-        }
+        // Create a response body with the attribute and pivot data, including the type, name, and value of the attribute.
+        let error = Abort(.notFound)
+        return map(attribute.unwrap(or: error), pivot.unwrap(or: error), AttributeContent.init)
     }
     
     /// Detaches a given `Attribute` from its parent `Prodcut` model.
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         
-        // Get the `Paroduct` and `Attribute` models passed into the request's route parameters.
-        return try flatMap(to: HTTPStatus.self, request.parameters.next(Product.self), request.parameters.next(Attribute.self), { (product, attribute) in
-            
-            // Get the prodcut's attributes, and detach the attribute passed in.
-            return product.attributes.detach(attribute, on: request).transform(to: .noContent)
-        })
+        // Get `Prodduct` and `Attribute` IDs of the pivot to delete.
+        let product = try request.parameters.id(for: Product.self)
+        let attribute = try request.parameters.id(for: Attribute.self)
+        
+        // Delete all pivots that have matching `Product` and `Attribute` IDs.
+        let delete = ProductAttribute.query(on: request).filter(\.productID == product).filter(\.attributeID == attribute).delete()
+        
+        // Return HTTP 204 (No Content) status.
+        return delete.transform(to: .noContent)
     }
 }
 

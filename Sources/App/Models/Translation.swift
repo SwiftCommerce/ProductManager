@@ -8,11 +8,12 @@ import Foundation
 ///
 /// This protocol requires it's implementors to be a class, conform to `Content`, `Model`, `Migration`, and `Parameter`,
 /// and that it's `Database` type is `MySQLDatabase`, that `ID` is `String`, and `ResolvedParameter` is `Future<Self>`.
-protocol Translation: class, Content, Model, Migration, Parameter where Self.Database == MySQLDatabase, Self.ID == String, Self.ResolvedParameter == Future<Self> {
+protocol Translation: class, Content, MySQLModel, Migration, Parameter
+    where Self.ResolvedParameter == Future<Self>
+{
     
     /// The name of the translation.
-    /// This property is used for the model's database ID, instead of an `Int`.
-    var name: String? { get set }
+    var name: String { get }
     
     /// The description of the translation.
     var description: String { get set }
@@ -22,23 +23,30 @@ protocol Translation: class, Content, Model, Migration, Parameter where Self.Dat
     
     /// The ID of the parent model for the translation.
     var parentID: Int { get }
+    
+    /// Creates a new instance of `Self`.
+    init(name: String, description: String, languageCode: String, parentID: Int)
 }
 
 /// Default implementations of methods and computed properties for the `Translation` protocol.
 extension Translation {
     
-    /// The default implementation of the `idKey` property required by the `Model` protocol.
-    /// The keypath returned defaults to the model's `name` property.
-    static var idKey: WritableKeyPath<Self, String?> {
-        return \.name
-    }
-    
     /// Create a `TranslationResponseBody` from the current translation model.
     ///
     /// - Parameter executor: The object used to get models connected to the current translation.
     /// - Returns: A `TranslationResponseBody`, wrapped in a future.
-    func response(on request: Request) -> Future<TranslationResponseBody> {
-        return Future.map(on: request) { return TranslationResponseBody(self) }
+    func response(on request: Request) -> Future<TranslationContent> {
+        return Future.map(on: request) { return TranslationContent(self) }
+    }
+    
+    /// Generates the database table for the model
+    ///
+    /// We use a custom implementation so we can have a uniques `name` property.
+    public static func prepare(on connection: Database.Connection) -> Future<Void> {
+        return Database.create(self, on: connection) { builder in
+            try addProperties(to: builder)
+            builder.unique(on: \.name)
+        }
     }
 }
 
@@ -49,9 +57,11 @@ final class ProductTranslation: Translation {
     
     static let entity: String = "productTranslations"
     
+    /// The unique ID for the model.
+    var id: Int?
+    
     /// The name of the translation.
-    /// This property is used as the database identifier.
-    var name: String?
+    let name: String
     
     /// A description of the translation.
     var description: String
@@ -76,9 +86,12 @@ final class CategoryTranslation: Translation {
     
     static let entity: String = "categoryTranslations"
     
+    /// The unique ID for the model.
+    var id: Int?
+    
     /// The name of the translation.
     /// This property is used as the database identifier.
-    var name: String?
+    let name: String
     
     /// A description of the translation.
     var description: String
@@ -95,28 +108,5 @@ final class CategoryTranslation: Translation {
         self.description = description
         self.languageCode = languageCode
         self.parentID = parentID
-    }
-}
-
-// MARK: - Public
-
-/// A representation of a translation type that gets returned from a route handler.
-struct TranslationResponseBody: Content {
-    
-    /// The name of the translation
-    let name: String?
-    
-    /// The descripton of the trsnaltion
-    let description: String
-    
-    /// The language code for the translation.
-    let languageCode: String
-    
-    /// Creates a `TranslationResponseBody` from an object that conforms to `Translation`
-    /// and a price (only used if the `translation` parameter type is `ProductTranslation`).
-    init<Tran>(_ translation: Tran) where Tran: Translation {
-        self.name = translation.name
-        self.description = translation.description
-        self.languageCode = translation.languageCode
     }
 }

@@ -37,7 +37,7 @@ final class CategoryController: RouteCollection {
         
         // Registers a PATCH endpoint at `/categories/:category`.
         // The route automatically decodes the request's body to a `CategoryUpdateBody` object.
-        categories.patch(CategoryUpdateBody.self, at: Category.parameter, use: update)
+        categories.patch(CategoryUpdateContent.self, at: Category.parameter, use: update)
         
         // Registers a DELETE endpoint at `/categories/:category`.
         categories.delete(Category.parameter, use: delete)
@@ -69,39 +69,20 @@ final class CategoryController: RouteCollection {
     }
    
     /// Updates the sub-categories of a given `Category` model.
-    func update(_ request: Request, _ categories: CategoryUpdateBody)throws -> Future<CategoryResponseBody> {
-        
-        // Get categories from the database with IDs that appear in `categories` properties.
-        let attach = Category.query(on: request).models(where: \Category.id, in: categories.attach)
-        let detach = Category.query(on: request).models(where: \Category.id, in: categories.detach)
+    func update(_ request: Request, _ content: CategoryUpdateContent)throws -> Future<CategoryResponseBody> {
         
         // Get the category to update from route parameters.
         let category = try request.parameters.next(Category.self)
         
-        
-        return Async.flatMap(to: Category.self, category, attach, detach) { (category, attach, detach) in
-            
-            // Detach all categories from parent category id `detach` array.
-            let detached = detach.map({ category.subCategories.detach($0, on: request) }).flatten(on: request)
-            
-            // Attach all categories to parent category with an ID in the `attach` array.
-            // We don't use `categories.subCategories.attach` because we get weird compiler errors when we do.
-            let attached = try attach.map({ try category.attachWithoutDuplication($0, on: request) }).flatten(on: request).transform(to: ())
-            
-            // Updates the category's `sort` property value if on exists in the request's body.
-            category.sort = categories.sort ?? category.sort
-            let sort = category.save(on: request).transform(to: ())
-            
-            // Once attaching and detaching are complete, return the category that we updated.
-            return [detached, attached, sort].flatten(on: request).transform(to: category)
-        }.response(on: request)
+        // Update the category's propertys and save it to the database.
+        return category.map(content.update).save(on: request).response(on: request)
     }
     
     /// Deletes a category from the database, along with its connections to other categories and products.
     func delete(_ request: Request)throws -> Future<HTTPStatus> {
         
         // Get the category in the request's route parameters.
-        return try request.parameters.next(Category.self).flatMap(to: Category.self, { (category) in
+        return try request.parameters.next(Category.self).flatMap(to: Category.self) { (category) in
             
             // Delete all connections to category from products and categories.
             let detachCategories = try category.subCategories.pivots(on: request).delete()
@@ -110,10 +91,8 @@ final class CategoryController: RouteCollection {
             // Once the connections to sud-catefories have been updated,
             // return the category from the parameter
             return [detachCategories, detachProducts].flatten(on: request).transform(to: category)
-        }).flatMap(to: HTTPStatus.self, { (cateogory) in
             
             // All the connections are deleted, so now it is safe to delete the parent category from the database.
-            return cateogory.delete(on: request).transform(to: .noContent)
-        })
+        }.delete(on: request).transform(to: .noContent)
     }
 }

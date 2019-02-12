@@ -13,6 +13,12 @@ final class Product: ProductModel {
     /// The SKU (stock-keeping unit) of the tangible product this model represents.
     let sku: String
     
+    /// The name of the product.
+    var name: String
+    
+    /// A description of the product.
+    var description: String?
+    
     /// That current state of the product.
     /// This could be `draft`, `published`, or one of other cases.
     var status: ProductStatus
@@ -21,9 +27,16 @@ final class Product: ProductModel {
     var updatedAt: Date?
     var deletedAt: Date?
     
-    init(sku: String, status: ProductStatus) {
+    init(sku: String, name: String, description: String?, status: ProductStatus) {
         self.sku = sku
+        self.name = name
+        self.description = description
         self.status = status
+    }
+    
+    /// Creats a query that gets the `Price` models connected to the current `Product` model.
+    var prices: Children<Product, Price> {
+        return children(\.productID)
     }
     
     /// Gets all the `ProductTranslation` models connected to the current `Product` model through `ProductTranslationPivot`s.
@@ -84,6 +97,21 @@ final class Product: ProductModel {
     }
 }
 
+extension Product {
+    static func prepare(on conn: MySQLDatabase.Connection) -> Future<Void> {
+        return Database.create(Product.self, on: conn) { builder in
+            builder.field(for: \.id, isIdentifier: true)
+            builder.field(for: \.sku)
+            builder.field(for: \.name)
+            builder.field(for: \.description, type: .text)
+            builder.field(for: \.status)
+            builder.field(for: \.createdAt)
+            builder.field(for: \.updatedAt)
+            builder.field(for: \.deletedAt)
+        }
+    }
+}
+
 // MARK: - Public
 
 /// A representation of a product model containing data from connected models.
@@ -91,17 +119,20 @@ final class Product: ProductModel {
 /// Giving the client more information then just the `sku`.
 struct ProductResponseBody: Content {
     let id: Int?
-    let sku: String
+    let sku, name: String
+    let description: String?
     let status: ProductStatus
     let createdAt, updatedAt, deletedAt: Date?
     let attributes: [AttributeContent]
-    let translations: [TranslationResponseBody]
+    let translations: [TranslationContent]
     let categories: [CategoryResponseBody]
     let prices: [Price]
     
-    init(product: Product, attributes: [AttributeContent], translations: [TranslationResponseBody], categories: [CategoryResponseBody], prices: [Price]) {
+    init(product: Product, attributes: [AttributeContent], translations: [TranslationContent], categories: [CategoryResponseBody], prices: [Price]) {
         self.id = product.id
         self.sku = product.sku
+        self.name = product.name
+        self.description = product.description
         self.status = product.status
         self.createdAt = product.createdAt
         self.updatedAt = product.updatedAt
@@ -136,9 +167,7 @@ extension Promise where T == ProductResponseBody {
             let prices = try product.prices.query(on: request).all()
             
             // Get all the translations connected to the product and convert them to their response type.
-            let translations = try product.translations(with: request).flatMap(to: [TranslationResponseBody].self) { $0.map({ translation in
-                return translation.response(on: request)
-            }).flatten(on: request) }
+            let translations = try product.translations(with: request).map { $0.map(TranslationContent.init) }
             
             // Get all the categories connected to the product and convert them to their resonse type.
             let categories = product.categories(with: request).flatMap(to: [CategoryResponseBody].self) {

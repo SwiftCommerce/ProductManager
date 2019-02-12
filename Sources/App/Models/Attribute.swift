@@ -8,7 +8,7 @@ final class Attribute: ProductModel {
     /// The name of the attribute, given by the user.
     var name: String
     
-    /// The value of the attribute, given by the user.
+    /// The type that the attribute contains, such as `string` or `date`.
     var type: String
     
     var createdAt: Date?

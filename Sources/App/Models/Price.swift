@@ -4,7 +4,7 @@ import Vapor
 /// The price for a product.
 /// A `Price` connects to a `Product` model through the
 /// `ProductPrice` pivot model.
-final class Price: Content, MySQLModel, Migration, Parameter {
+final class Price: Content, MySQLModel, Parameter {
     static let entity: String = "prices"
     
     /// The database ID of the model.
@@ -28,6 +28,8 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     /// The currency used for the price, i.e. EUR, USD, GBR.
     var currency: String
     
+    /// The parent product model that owns the price model.
+    let productID: Product.ID
     
     /// Creates a new `Price` model from given data.
     /// Make sure you call `.save` on it to store it in the database.
@@ -37,7 +39,7 @@ final class Price: Content, MySQLModel, Migration, Parameter {
     ///   - activeFrom: The date the price starts being valid. If you pass in `nil`, it defaults to the time the price is created (`Date()`).
     ///   - activeTo: The date the price becomes invalid. If you pass in `nil`, it defaults to some time in the distant future (`Date.distantFuture`).
     ///   - active: Wheather or not the price is valid. If you pass in `nil`, the value is calculated of the `activeFrom` and `activeTo` dates.
-    init(cents: Int, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
+    init(productID: Product.ID, cents: Int, activeFrom: Date?, activeTo: Date?, active: Bool?, currency: String)throws {
         
         // Use some odd verification fot the 'currency' value.
         // It should be a three lettter character string.
@@ -60,12 +62,14 @@ final class Price: Content, MySQLModel, Migration, Parameter {
         self.activeTo = at
         self.active = active ?? (currentDate > af && currentDate < at)
         self.currency = currency.uppercased()
+        self.productID = productID
     }
     
     // We have a custom decoding init so we can have the same default values as the ones in the main init.
     convenience init(from decoder: Decoder)throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(
+            productID: container.decode(Product.ID.self, forKey: .productID),
             cents: container.decode(Int.self, forKey: .cents),
             activeFrom: container.decodeIfPresent(Date.self, forKey: .activeFrom),
             activeTo: container.decodeIfPresent(Date.self, forKey: .activeTo),
@@ -78,37 +82,18 @@ final class Price: Content, MySQLModel, Migration, Parameter {
         // This method is also used by Fluent to create the tables in the datbase.
         self.id = try container.decodeIfPresent(Int.self, forKey: .id)
     }
-    
-    
-    /// Updates the model with data from a request and saves it.
-    ///
-    /// - Parameters:
-    ///   - body: The body of a request, decoded to a `PriceUpdateBody`.
-    ///   - executor: The object that will be used to save the model to the database.
-    /// - Returns: A void future, which will signal once the update is complete.
-    func update(with body: PriceUpdateBody) -> Price {
-        // Update all the properties if a value for it is found in the body, else use the old value.
-        self.cents = body.cents ?? self.cents
-        self.activeFrom = body.activeFrom ?? self.activeFrom
-        self.activeTo = body.activeTo ?? self.activeTo
-        self.active = body.active ?? self.active
-        
-        return self
-    }
 }
 
-/// A representation of a request's body when you need to update a `Price` model.
-struct PriceUpdateBody: Content {
+extension Price: Migration {
     
+    /// See `Migration.prepare(on:)`.
     ///
-    let cents: Int?
-    
-    ///
-    let activeFrom: Date?
-    
-    ///
-    let activeTo: Date?
-    
-    ///
-    let active: Bool?
+    /// We create a custom implementation of this method so we can have a foreign-key constraint
+    /// between the `Price.productID` property and the `Product.id` property.
+    static func prepare(on conn: MySQLConnection) -> Future<Void> {
+        return MySQLDatabase.create(self, on: conn) { builder in
+            try addProperties(to: builder)
+            builder.reference(from: \.productID, to: \Product.id)
+        }
+    }
 }

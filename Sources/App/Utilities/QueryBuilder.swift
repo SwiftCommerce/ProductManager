@@ -22,10 +22,3 @@ extension QueryBuilder {
         return Future.flatMap(on: self.connection.eventLoop) { return self.filter(field ~~ values).all() }
     }
 }
-
-extension QueryBuilder where Database.Query: FluentSQLQuery {
-    func groupBy<M, T>(_ field: KeyPath<M, T>) -> Self where M: SQLTable {
-        self.query.groupBy.append(.groupBy(.column(.keyPath(field))))
-        return self
-    }
-}

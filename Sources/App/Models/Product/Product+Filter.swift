@@ -77,10 +77,10 @@ extension Product {
         } else { return QueryStructure() }
         
         if let min = minPrice {
-            queryData.filter.append(.init(Price.table + ".`cents` >= ?", [min]))
+            queryData.filter.append(.init("\(Price.table).`cents` >= ?", [min]))
         }
         if let max = maxPrice {
-            queryData.filter.append(.init(Price.table + ".`cents` <= ?", [max]))
+            queryData.filter.append(.init("\(Price.table).`cents` <= ?", [max]))
         }
         
         return queryData
@@ -95,10 +95,10 @@ extension Product {
                 .init(table: Category.table, on: Category.table + ".`id`", to: ProductCategory.table + ".`categoryID`")
             ],
             filter: [
-                .init(Category.table + ".`name` IN (" + Array(repeating: "?", count: categories.count).joined(separator: ", ") + ")", categories)
+                .init("\(Category.table).`name` IN (\(Array(repeating: "?", count: categories.count).joined(separator: ", ")))", categories)
             ],
             having: [
-                .init("COUNT(DISTINCT " + Category.table + ".`name`) = ?", [categories.count])
+                .init("COUNT(DISTINCT \(Category.table).`name`) = ?", [categories.count])
             ]
         )
     }
@@ -113,17 +113,17 @@ extension Product {
                 .init(table: Attribute.table, on: Attribute.table + ".`id`", to: ProductAttribute.table + ".`attributeID`")
             ],
             filter: [
-                .init(ProductAttribute.table + ".`id` IN (" + pivots.query + ")", pivots.binds)
+                .init("\(ProductAttribute.table).`id` IN (\(pivots.query))", pivots.binds)
             ],
             having: [
-                .init("COUNT(DISTINCT " + ProductAttribute.table + ".`id`) = ?", [attributes.count])
+                .init("COUNT(DISTINCT \(ProductAttribute.table).`id`) = ?", [attributes.count])
             ]
         )
     }
     
     private static func productAttributes(attributes: [String: String]) -> (query: String, binds: [Encodable]) {
         let filter: (query: [String], binds: [Encodable]) = attributes.reduce(into: (query: [], binds: [])) { result, attribute in
-            result.query.append("(" + Attribute.table + ".`name` = ? AND " + ProductAttribute.table + ".`value` = ?)")
+            result.query.append("(\(Attribute.table).`name` = ? AND \(ProductAttribute.table).`value` = ?)")
             result.binds.append(contentsOf: [attribute.key, attribute.value])
         }
         
@@ -136,10 +136,10 @@ extension Product {
             ]
         )
         let serelized = structure.serelize()
-        let query =
-            "SELECT " + ProductAttribute.table + ".`id` FROM " + ProductAttribute.table +
-            " " + serelized.query +
-            " GROUP BY " + ProductAttribute.table + ".`id`"
+        let query = """
+        SELECT \(ProductAttribute.table).`id` FROM \(ProductAttribute.table) \(serelized.query) \
+        GROUP BY \(ProductAttribute.table).`id`
+        """
         
         return (query, serelized.binds)
     }
@@ -180,7 +180,11 @@ extension Product {
         switch direction?.lowercased() {
         case "asc", "ascending": mysqlDirection = .ascending
         case "desc", "descending": mysqlDirection = .descending
-        default: throw Abort(.badRequest, reason: "No valid `sortDirection` value. Expected `asc`, `ascending`, `desc`, `descending`.")
+        default:
+            throw Abort(
+                .badRequest,
+                reason: "No valid `sortDirection` value. Expected `asc`, `ascending`, `desc`, `descending`."
+            )
         }
         
         let mysqlProperty: String
@@ -214,7 +218,7 @@ extension Product {
 
 extension Model {
     static var table: String {
-        return "`" + self.entity + "`"
+        return "`\(self.entity)`"
     }
 }
 
@@ -251,32 +255,32 @@ struct QueryStructure {
         var binds: [Encodable] = []
         
         if let table = self.table, self.selects.count > 0 {
-            query.append("SELECT " + self.selects.joined(separator: ", ") + " FROM " + table + " ")
+            query.append("SELECT \(self.selects.joined(separator: ", ")) FROM \(table) ")
         }
         if self.joins.count > 0 {
-            let joins = self.joins.map { return "JOIN " + $0.table + " ON " + $0.base + " = " + $0.relative }
+            let joins = self.joins.map { return "JOIN \($0.table) ON \($0.base) = \($0.relative)" }
             query.append(joins.joined(separator: " ") + " ")
         }
         if self.filter.count > 0 {
-            query.append("WHERE " + self.filter.map { $0.query }.joined(separator: " AND ") + " ")
+            query.append("WHERE \(self.filter.map { $0.query }.joined(separator: " AND ")) ")
             binds.append(contentsOf: self.filter.flatMap { $0.binds })
         }
         if self.groups.count > 0 {
-            query.append(" GROUP BY " + self.groups.joined(separator: ", ") + " ")
+            query.append(" GROUP BY \(self.groups.joined(separator: ", ")) ")
         }
         if let inter = intermediate {
             query.append(inter.query)
             binds.append(contentsOf: inter.binds)
         }
         if self.having.count > 0 {
-            query.append(contentsOf: " HAVING " + self.having.map { $0.query }.joined(separator: " AND "))
+            query.append(" HAVING \(self.having.map { $0.query }.joined(separator: " AND "))")
             binds.append(contentsOf: self.having.flatMap { $0.binds })
         }
         if let order = self.order {
             switch order.property {
-            case let .property(prop): query.append(" ORDER BY " + prop + " ")
+            case let .property(prop): query.append(" ORDER BY \(prop) ")
             case let .location(string, property):
-                query.append(" ORDER BY LOCATE (?, " + property + ") ")
+                query.append(" ORDER BY LOCATE (?, \(property)) ")
                 binds.append(string)
             }
             query.append(order.direction.serialize(&binds))
